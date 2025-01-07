@@ -39,7 +39,7 @@
 	if ( PARM_VALID( x ) && !params[ x ]->IsDefined() )\
 	params[ x ]->SetVecValue( val0, val1, val2 );
 
-void GetTexcoordSettings( const bool bDecal,
+void GetTexcoordSettings( const bool bModel, const bool bDecal,
 	int &iNumTexcoords, int **iTexcoordDim );
 
 extern ConVar deferred_radiosity_multiplier;

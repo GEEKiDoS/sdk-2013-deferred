@@ -279,7 +279,7 @@ PS_OUTPUT main( const PS_INPUT In )
 		GAMMA_LIGHT_SCALE;
 #endif
 
-	Out.vColor_0.xyz = ( ( flAlbedoSample + flLighting.w * g_flPhongScale ) * flLighting.xyz
+	Out.vColor_0.xyz = ( ( flAlbedoSample.rgb + flLighting.w * g_flPhongScale ) * flLighting.xyz
 		+ flSpecularLighting ) * flLightScale;
 
 #if PIXELFOGTYPE == 0

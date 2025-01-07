@@ -76,7 +76,12 @@ struct VS_INPUT
 	float3 vNormal					: NORMAL;
 #endif
 	float2 vTexCoord_0				: TEXCOORD0;
-
+	
+#if !MODEL
+	float2 vTexCoord_Lightmap		: TEXCOORD1;
+	float2 vTexCoord_LightmapOffset	: TEXCOORD2;
+#endif
+	
 #if MODEL
 
 	float4 vBoneWeights				: BLENDWEIGHT;
@@ -118,6 +123,11 @@ struct VS_OUTPUT
 
 #if BUMPMAP2
 	float4 vColor_0					: COLOR0;
+#endif
+	
+#if !MODEL
+	float4 vLightmapCoord0And1 : TEXCOORD4;
+	float4 vLightmapCoord2And3 : TEXCOORD5;
 #endif
 };
 
@@ -221,5 +231,12 @@ VS_OUTPUT main( const VS_INPUT In )
 	Out.worldTangentT = worldTangentT;
 #endif
 
+#if !MODEL
+	Out.vLightmapCoord0And1.xy = In.vTexCoord_Lightmap;
+	Out.vLightmapCoord0And1.zw = Out.vLightmapCoord0And1.xy + In.vTexCoord_LightmapOffset;
+	Out.vLightmapCoord2And3.xy = Out.vLightmapCoord0And1.zw + In.vTexCoord_LightmapOffset;
+	Out.vLightmapCoord2And3.zw = Out.vLightmapCoord2And3.xy + In.vTexCoord_LightmapOffset;
+#endif
+	
 	return Out;
 }

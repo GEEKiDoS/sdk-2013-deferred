@@ -13,6 +13,7 @@ ITexture *GetDefRT_Albedo();
 ITexture *GetDefRT_Specular();
 ITexture *GetDefRT_LightCtrl();
 ITexture *GetDefRT_Lightaccum();
+ITexture *GetDefRT_Lightmap();
 
 ITexture *GetDefRT_VolumePrepass();
 ITexture *GetDefRT_VolumetricsBuffer( int index );
@@ -27,21 +28,14 @@ int GetShadowResolution_Point();
 int GetShadowResolution_Spot_LOD1();
 int GetShadowResolution_Spot_LOD2();
 
-
 int GetShadowResolution_Point_LOD1();
 int GetShadowResolution_Point_LOD2();
 #endif
 
 #if DEFCFG_ADAPTIVE_SHADOWMAP_LOD
-int GetShadowResolution_Point_LOD1()
-{
-	return deferred_rt_shadowpoint_lod1_res.GetInt();
-}
+int GetShadowResolution_Point_LOD1() { return deferred_rt_shadowpoint_lod1_res.GetInt(); }
 
-int GetShadowResolution_Point_LOD2()
-{
-	return deferred_rt_shadowpoint_lod2_res.GetInt();
-}
+int GetShadowResolution_Point_LOD2() { return deferred_rt_shadowpoint_lod2_res.GetInt(); }
 #endif
 
 ITexture *GetShadowColorRT_Ortho( int index );

@@ -48,6 +48,10 @@ sampler sBumpmap2							: register( s3 );
 sampler sBlendmodulate						: register( s4 );
 #endif
 
+#if !MODEL
+sampler sLightmap							: register( s5 );
+#endif
+
 struct PS_INPUT
 {
 #if BLENDMODULATE
@@ -69,6 +73,11 @@ struct PS_INPUT
 #if BUMPMAP2
 	float4 vColor_0					: COLOR0;
 #endif
+	
+#if !MODEL
+	float4 vLightmapCoord0And1 : TEXCOORD4;
+	float4 vLightmapCoord2And3 : TEXCOORD5;
+#endif
 };
 
 
@@ -79,10 +88,17 @@ struct PS_OUTPUT
 #if ( DECAL == 0 )
 	float4 vColor_1				:	COLOR1;
 
-#	if ( DEFCFG_LIGHTCTRL_PACKING == 0 )
+#if ( DEFCFG_LIGHTCTRL_PACKING == 0 )
 	float4 vColor_2				:	COLOR2;
-#	endif
+	float4 vColor_3				:   COLOR3;
+#else
+	float4 vColor_3				:   COLOR2;
+#endif
 
+#endif
+	
+#if !MODEL
+	
 #endif
 };
 
@@ -153,6 +169,20 @@ PS_OUTPUT main( const PS_INPUT In )
 
 	Out.vColor_1 = float4( In.worldNormal_Depth.w, 0, 0, 1 );
 
+#endif
+	
+#if !MODEL
+#if BUMPMAP
+	float4 flSampleLightmap = (
+		tex2D( sLightmap, In.vLightmapCoord0And1.zw ) * bumpNormal.x +
+		tex2D( sLightmap, In.vLightmapCoord2And3.xy ) * bumpNormal.y +
+		tex2D( sLightmap, In.vLightmapCoord2And3.zw ) * bumpNormal.z
+	);
+#else
+	float4 flSampleLightmap = tex2D(sLightmap, In.vLightmapCoord0And1.xy);
+#endif
+	
+	Out.vColor_3 = flSampleLightmap;
 #endif
 
 	return Out;

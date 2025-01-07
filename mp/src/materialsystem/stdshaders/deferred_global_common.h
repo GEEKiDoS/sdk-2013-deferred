@@ -82,6 +82,7 @@
 #	define DEFRTNAME_GBUFFER2 "_rt_defAlbedo"
 #	define DEFRTNAME_GBUFFER3 "_rt_defSpecular"
 #endif
+#define DEFRTNAME_GBUFFER4 "_rt_defLightmap"
 #define DEFRTNAME_LIGHTACCUM "_rt_LightAccum"
 
 #define DEFRTNAME_VOLUMPREPASS "_rt_VolumPrepass"
