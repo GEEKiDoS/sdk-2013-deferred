@@ -20,6 +20,7 @@ using namespace vgui;
 class VisibilityClient
 {
 public:
+	inline virtual ~VisibilityClient() {};
 	virtual bool ShouldDraw() = 0;
 	virtual VisibilityClient *ShallowCopy() = 0;
 };

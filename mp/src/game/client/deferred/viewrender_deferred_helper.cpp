@@ -46,7 +46,7 @@ namespace Memory
 
 			if ( isxdigit( *input ) )
 			{
-				ret.Bytes.push_back( { strtol( input, NULL, 16 ), false } );
+				ret.Bytes.push_back( { static_cast<unsigned char>(strtol( input, NULL, 16 )), false } );
 
 				input += 2;
 			}

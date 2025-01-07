@@ -6,9 +6,6 @@
 // and implement another button here.
 //=============================================================================//
 
-#include <math.h>
-#define PROTECTED_THINGS_DISABLE
-
 #include <vgui/IInput.h>
 #include <vgui/ISystem.h>
 #include <vgui/ISurface.h>

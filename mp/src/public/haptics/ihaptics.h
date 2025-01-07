@@ -38,7 +38,10 @@ typedef const char *(*ActivityList_NameForIndex_t)( int iActivityIndex );
 // NVNT haptic system interface declaration
 abstract_class IHaptics
 {
-public: // Initialization.
+public:
+	inline virtual ~IHaptics() {};
+
+	// Initialization.
 	virtual bool Initialize(IVEngineClient* newengine, 
 		IViewRender *newview, 
 		vgui::IInputInternal* newinput, 
