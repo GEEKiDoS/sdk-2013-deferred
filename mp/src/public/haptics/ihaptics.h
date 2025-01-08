@@ -39,8 +39,6 @@ typedef const char *(*ActivityList_NameForIndex_t)( int iActivityIndex );
 abstract_class IHaptics
 {
 public:
-	inline virtual ~IHaptics() {};
-
 	// Initialization.
 	virtual bool Initialize(IVEngineClient* newengine, 
 		IViewRender *newview, 

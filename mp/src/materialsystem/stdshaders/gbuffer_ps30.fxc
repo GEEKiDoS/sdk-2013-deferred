@@ -35,10 +35,10 @@ sampler sBumpmap						: register( s1 );
 #if PHONGMAP
 sampler sPhongmap						: register( s2 );
 #else
-const float2 g_flPhong_exp				: register( c2 );
+const float2 g_flPhong_exp : register(c2);
 #endif
 
-const float2 g_flHalflambert_Litface	: register( c1 );
+const float2 g_flHalflambert_Litface : register(c1);
 
 #if BUMPMAP2
 sampler sBumpmap2							: register( s3 );
@@ -49,7 +49,7 @@ sampler sBlendmodulate						: register( s4 );
 #endif
 
 #if !MODEL
-sampler sLightmap							: register( s5 );
+sampler sLightmap : register(s5);
 #endif
 
 struct PS_INPUT
@@ -57,9 +57,9 @@ struct PS_INPUT
 #if BLENDMODULATE
 	float4 vTexCoord				: TEXCOORD0;
 #else
-	float2 vTexCoord				: TEXCOORD0;
+	float2 vTexCoord : TEXCOORD0;
 #endif
-	float4 worldNormal_Depth		: TEXCOORD1;
+	float4 worldNormal_Depth : TEXCOORD1;
 
 #if BUMPMAP
 	float3 worldTangentS			: TEXCOORD2;
@@ -83,35 +83,29 @@ struct PS_INPUT
 
 struct PS_OUTPUT
 {
-	float4 vColor_0				:	COLOR0;
-
+	float4 vColor_0 : COLOR0;
+	float4 vColor_Lightmap : COLOR1;
+	
 #if ( DECAL == 0 )
-	float4 vColor_1				:	COLOR1;
+	float4 vColor_1				:	COLOR2;
 
 #if ( DEFCFG_LIGHTCTRL_PACKING == 0 )
-	float4 vColor_2				:	COLOR2;
-	float4 vColor_3				:   COLOR3;
-#else
-	float4 vColor_3				:   COLOR2;
+	float4 vColor_2				:	COLOR3;
 #endif
-
-#endif
-	
-#if !MODEL
 	
 #endif
 };
 
 
-PS_OUTPUT main( const PS_INPUT In )
+PS_OUTPUT main(const PS_INPUT In)
 {
 	PS_OUTPUT Out;
 
 #if ALPHATEST
 	float4 flAlbedoSample = tex2D( sAlbedo, In.vTexCoord.xy );
-#	if ALPHATEST
+#if ALPHATEST
 	clip( flAlbedoSample.a - g_flAlphaRef );
-#	endif
+#endif
 #endif
 
 #if DECAL
@@ -148,26 +142,26 @@ PS_OUTPUT main( const PS_INPUT In )
 	worldNormal = worldNormal * 0.5f + 0.5f;
 
 #if ( TRANSLUCENT == 0 )
-#	if PHONGMAP
+#if PHONGMAP
 	float phong_exp = tex2D( sPhongmap, In.vTexCoord.xy ).x * 63.0f;
-#	else
-#		if BUMPMAP2
+#else
+#if BUMPMAP2
 	float phong_exp = lerp( g_flPhong_exp.x, g_flPhong_exp.y, flBlendfactor );
-#		else
+#else
 	float phong_exp = g_flPhong_exp.x;
-#		endif
-#	endif
+#endif
+#endif
 #endif
 
 #if DEFCFG_LIGHTCTRL_PACKING
 	Out.vColor_0 = float4( worldNormal, PackLightingControls( phong_exp,
 		g_flHalflambert_Litface.x, g_flHalflambert_Litface.y ) );
 #else
-	Out.vColor_0 = float4( worldNormal, 1 );
-	Out.vColor_2 = float4( phong_exp / 63.0f, g_flHalflambert_Litface.xy, 0 );
+	Out.vColor_0 = float4(worldNormal, 1);
+	Out.vColor_2 = float4(phong_exp / 63.0f, g_flHalflambert_Litface.xy, 0);
 #endif
 
-	Out.vColor_1 = float4( In.worldNormal_Depth.w, 0, 0, 1 );
+	Out.vColor_1 = float4(In.worldNormal_Depth.w, 0, 0, 1);
 
 #endif
 	
@@ -181,8 +175,9 @@ PS_OUTPUT main( const PS_INPUT In )
 #else
 	float4 flSampleLightmap = tex2D(sLightmap, In.vLightmapCoord0And1.xy);
 #endif
-	
-	Out.vColor_3 = flSampleLightmap;
+	Out.vColor_Lightmap = flSampleLightmap;
+#else
+	Out.vColor_Lightmap = float4(0,0,0,0);
 #endif
 
 	return Out;

@@ -647,7 +647,8 @@ void FinalLightFace( int iThread, int facenum )
 	float		    minlight;
 	int			    lightstyles;
 	LightingValue_t lb[NUM_BUMP_VECTS + 1], v[NUM_BUMP_VECTS + 1];
-	unsigned char   *pdata[NUM_BUMP_VECTS + 1];
+	// +1 for lightmap alpha
+	unsigned char   *pdata[NUM_BUMP_VECTS + 1 + 1]; 
 	int				bumpSample;
 	radial_t	    *rad = NULL;
 	radial_t	    *prad = NULL;
@@ -734,7 +735,7 @@ void FinalLightFace( int iThread, int facenum )
 		// it isn't going to use those positions (see loop over bumpSample below)
 		// The file offset is correctly computed to only store space for 1 set
 		// of light data if we don't have bumped lighting.
-		for( bumpSample = 0; bumpSample < bumpSampleCount; ++bumpSample )
+		for( bumpSample = 0; bumpSample < bumpSampleCount + 1; ++bumpSample )
 		{
 			pdata[bumpSample] = &(*pdlightdata)[f->lightofs + (k * bumpSampleCount + bumpSample) * fl->numluxels*4]; 
 		}
@@ -844,6 +845,12 @@ void FinalLightFace( int iThread, int facenum )
 
 				pdata[bumpSample] += 4;
 			}
+
+			pdata[bumpSampleCount][0] = uint8(clamp(lb[0].m_flDirectSunAmount, 0.0f, 1.0f) * 255.0f + 0.5f);
+			pdata[bumpSampleCount][1] = uint8(clamp(lb[1].m_flDirectSunAmount, 0.0f, 1.0f) * 255.0f + 0.5f);
+			pdata[bumpSampleCount][2] = uint8(clamp(lb[2].m_flDirectSunAmount, 0.0f, 1.0f) * 255.0f + 0.5f);
+			pdata[bumpSampleCount][3] = uint8(clamp(lb[3].m_flDirectSunAmount, 0.0f, 1.0f) * 255.0f + 0.5f);
+			pdata[bumpSampleCount] += 4;
 		}
 		FreeRadial( rad );
 		if (prad)

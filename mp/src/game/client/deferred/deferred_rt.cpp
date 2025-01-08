@@ -336,6 +336,8 @@ void InitDeferredRTs( bool bInitial )
 #endif
                                              g_tex_Lightaccum );
 
+    GetDeferredExt()->CommitTexture_Lightmap(g_tex_Lightmap);
+
     for ( int i = 0; i < MAX_SHADOW_ORTHO; i++ )
         GetDeferredExt()->CommitTexture_CascadedDepth(
             i, bShadowUseColor ? g_tex_ShadowColor_Ortho[i] : g_tex_ShadowDepth_Ortho[i] );

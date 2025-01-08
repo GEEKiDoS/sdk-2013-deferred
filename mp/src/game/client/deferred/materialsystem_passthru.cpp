@@ -1,4 +1,4 @@
-//====== Copyright © Sandern Corporation, All rights reserved. ===========//
+//====== Copyright Sandern Corporation, All rights reserved. ===========//
 //
 // Purpose:
 //

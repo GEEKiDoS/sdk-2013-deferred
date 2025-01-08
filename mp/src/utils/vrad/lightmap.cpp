@@ -3409,6 +3409,9 @@ void PrecompLightmapOffsets()
 		{
 	        lightdatasize += nLuxels * 4 * lightstyles;
 		}
+
+		// lightmap alpha
+		lightdatasize += nLuxels * 4 * lightstyles;
     }
 
 	// The incremental lighting code needs us to preserve the contents of dlightdata

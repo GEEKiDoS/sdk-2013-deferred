@@ -15,6 +15,8 @@ sampler sLightCtrl							: register( s3 );
 sampler sShadowDepth						: register( s2 );
 #endif
 
+sampler sLightmap							: register( s4 );
+
 const float3 g_vecViewOrigin				: register( c0 );
 const float3 g_vecLightVec_Forward			: register( c1 );
 
@@ -27,6 +29,7 @@ const float4 g_vecFilterConfig_B[2]			: register( c14 );
 const float3 g_light_diffuse				: register( c16 );
 const float3 g_light_ambient_high			: register( c17 );
 const float3 g_light_ambient_low_half		: register( c18 );
+const float	 g_lightmap_scale				: register( c19 );
 
 struct PS_INPUT
 {
@@ -76,7 +79,8 @@ PS_OUTPUT main( const PS_INPUT In )
 	float3 diffuse = g_light_diffuse;
 	float lightAmount = saturate( litDot );
 	float3 ambient = lerp( g_light_ambient_low_half, g_light_ambient_high, viewFwdDot );
-
+	ambient += tex2D(sLightmap, In.vTexCoord).rgb * g_lightmap_scale;;
+	
 #if HAS_SHADOW
 	if ( flDepth < DEPTH_RECONSTRUCTION_LIMIT )
 	{

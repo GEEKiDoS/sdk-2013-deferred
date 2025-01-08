@@ -160,6 +160,7 @@ public:
                                         ITexture *pTexAlbedo, ITexture *pTexSpecular,
 #endif
                                         ITexture *pTexLightAccum ) = 0;
+    virtual void CommitTexture_Lightmap( ITexture *pLightmap ) = 0;
     virtual void CommitTexture_CascadedDepth( const int &index, ITexture *pTexShadowDepth ) = 0;
     virtual void CommitTexture_DualParaboloidDepth( const int &index, ITexture *pTexShadowDepth ) = 0;
     virtual void CommitTexture_ProjectedDepth( const int &index, ITexture *pTexShadowDepth ) = 0;

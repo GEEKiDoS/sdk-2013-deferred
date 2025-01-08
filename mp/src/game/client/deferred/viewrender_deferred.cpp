@@ -224,7 +224,7 @@ public:
     virtual void PopView();
 
     virtual void CalcShadowView() = 0;
-    virtual void CommitData() {};
+    virtual void CommitData(){};
 
     virtual int GetShadowMode() = 0;
 
@@ -865,16 +865,14 @@ void CGBufferView::PushGBuffer( bool bInitial, float zScale, bool bClearDepth )
 
     if ( bClearDepth ) pRenderContext->ClearBuffers( false, true );
 
-    pRenderContext->SetRenderTargetEx( 1, pDepth );
+    pRenderContext->SetRenderTargetEx( 1, GetDefRT_Lightmap() );
+    pRenderContext->SetRenderTargetEx( 2, pDepth );
 
 #if DEFCFG_DEFERRED_SHADING == 1
-    pRenderContext->SetRenderTargetEx( 2, pNormals );
-    pRenderContext->SetRenderTargetEx( 3, GetDefRT_Specular() );
+    pRenderContext->SetRenderTargetEx( 3, pNormals );
+    pRenderContext->SetRenderTargetEx( 4, GetDefRT_Specular() );
 #elif !DEFCFG_LIGHTCTRL_PACKING
-    pRenderContext->SetRenderTargetEx( 2, GetDefRT_LightCtrl() );
-    pRenderContext->SetRenderTargetEx( 3, GetDefRT_Lightmap() );
-#else
-    pRenderContext->SetRenderTargetEx( 2, GetDefRT_Lightmap() );
+    pRenderContext->SetRenderTargetEx( 3, GetDefRT_LightCtrl() );
 #endif
 
     pRenderContext->SetIntRenderingParameter( INT_RENDERPARM_DEFERRED_RENDER_STAGE, DEFERRED_RENDER_STAGE_GBUFFER );
