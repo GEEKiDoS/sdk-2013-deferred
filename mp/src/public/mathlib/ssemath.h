@@ -2742,6 +2742,34 @@ public:
 
 };
 
+//
+inline FourVectors Mul(const FourVectors& a, const fltx4& b)
+{
+	FourVectors ret;
+	ret.x = MulSIMD(a.x, b);
+	ret.y = MulSIMD(a.y, b);
+	ret.z = MulSIMD(a.z, b);
+	return ret;
+}
+
+inline FourVectors Mul(const FourVectors& a, const FourVectors& b)
+{
+	FourVectors ret;
+	ret.x = MulSIMD(a.x, b.x);
+	ret.y = MulSIMD(a.y, b.y);
+	ret.z = MulSIMD(a.z, b.z);
+	return ret;
+}
+
+inline FourVectors Madd(const FourVectors& a, const fltx4& b, const FourVectors& c)	// a*b + c
+{
+	FourVectors ret;
+	ret.x = MaddSIMD(a.x, b, c.x);
+	ret.y = MaddSIMD(a.y, b, c.y);
+	ret.z = MaddSIMD(a.z, b, c.z);
+	return ret;
+}
+
 /// form 4 cross products
 inline FourVectors operator ^(const FourVectors &a, const FourVectors &b)
 {
@@ -2749,6 +2777,24 @@ inline FourVectors operator ^(const FourVectors &a, const FourVectors &b)
 	ret.x=SubSIMD(MulSIMD(a.y,b.z),MulSIMD(a.z,b.y));
 	ret.y=SubSIMD(MulSIMD(a.z,b.x),MulSIMD(a.x,b.z));
 	ret.z=SubSIMD(MulSIMD(a.x,b.y),MulSIMD(a.y,b.x));
+	return ret;
+}
+
+inline FourVectors operator-(const FourVectors& a, const FourVectors& b)
+{
+	FourVectors ret;
+	ret.x = SubSIMD(a.x, b.x);
+	ret.y = SubSIMD(a.y, b.y);
+	ret.z = SubSIMD(a.z, b.z);
+	return ret;
+}
+
+inline FourVectors operator+(const FourVectors& a, const FourVectors& b)
+{
+	FourVectors ret;
+	ret.x = AddSIMD(a.x, b.x);
+	ret.y = AddSIMD(a.y, b.y);
+	ret.z = AddSIMD(a.z, b.z);
 	return ret;
 }
 

@@ -29,6 +29,7 @@ const float4 g_vecFilterConfig_B[2]			: register( c14 );
 const float3 g_light_diffuse				: register( c16 );
 const float3 g_light_ambient_high			: register( c17 );
 const float3 g_light_ambient_low_half		: register( c18 );
+
 const float	 g_lightmap_scale				: register( c19 );
 
 struct PS_INPUT
@@ -42,6 +43,12 @@ struct PS_OUTPUT
 {
 	float4 vColor_0				:	COLOR0;
 };
+
+float Luminance(float3 cColor)
+{
+	// Formula for calculating luminance based on NTSC standard
+	return dot(cColor.rgb, float3(0.2125, 0.7154, 0.0721));
+}
 
 PS_OUTPUT main( const PS_INPUT In )
 {
@@ -74,13 +81,9 @@ PS_OUTPUT main( const PS_INPUT In )
 	flSpecular = pow( flSpecular, phong_exp ) * dot( -In.vecWorldRay, flLitNormal );
 
 	float viewFwdDot = dot( g_vecLightVec_Forward.xyz, flLitNormal );
-	float litDot = lerp( viewFwdDot, viewFwdDot * 0.5f + 0.5f, half_lambert );
 
-	float3 diffuse = g_light_diffuse;
-	float lightAmount = saturate( litDot );
-	float3 ambient = lerp( g_light_ambient_low_half, g_light_ambient_high, viewFwdDot );
-	ambient += tex2D(sLightmap, In.vTexCoord).rgb * g_lightmap_scale;;
-	
+	float lightAmount = 1.0;
+
 #if HAS_SHADOW
 	if ( flDepth < DEPTH_RECONSTRUCTION_LIMIT )
 	{
@@ -98,8 +101,16 @@ PS_OUTPUT main( const PS_INPUT In )
 	}
 #endif
 
-	float4 lighting = float4( lerp( ambient, diffuse * ( litDot ), lightAmount ), flSpecular * lightAmount );
+	float4 lightmap = tex2D(sLightmap, In.vTexCoord);
+	lightmap.rgb *= g_lightmap_scale;
+	
+	lightAmount = saturate(lightmap.a * lightAmount);
 
+	float3 indirect = lightmap.rgb;
+	float3 blended = lightAmount * g_light_diffuse + indirect;
+	 //??? how;
+	
+	float4 lighting = float4(blended, flSpecular * lightAmount * lightmap.a);
 	Out.vColor_0 = WriteLighting( lighting );
 
 	return Out;

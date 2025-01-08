@@ -106,6 +106,8 @@ public:
 
 	// utility
 	void GetDispSurfNormal( int ndxFace, Vector &pt, Vector &ptNormal, bool bInside );
+	void GetDispSurfPointAndNormalFromUV(int ndxFace, Vector& pt, Vector& ptNormal,
+										 Vector2D& uv, bool bInside);
 	void GetDispSurf( int ndxFace, CVRADDispColl **ppDispTree );
 
 	// bsp tree functions
@@ -657,6 +659,32 @@ void CVRadDispMgr::GetDispSurfNormal( int ndxFace, Vector &pt, Vector &ptNormal,
 	pDispTree->DispUVToSurfPoint( uv, pt, 1.0f );
 }
 
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void CVRadDispMgr::GetDispSurfPointAndNormalFromUV(int ndxFace, Vector& pt, Vector& ptNormal,
+												   Vector2D& uv, bool bInside)
+{
+	// get the displacement surface data
+	DispCollTree_t& dispTree = m_DispTrees[g_pFaces[ndxFace].dispinfo];
+	CVRADDispColl* pDispTree = dispTree.m_pDispTree;
+
+	if (bInside)
+	{
+		if (uv[0] < 0.0f || uv[0] > 1.0f) { Msg("Disp UV (%f) outside bounds!\n", uv[0]); }
+		if (uv[1] < 0.0f || uv[1] > 1.0f) { Msg("Disp UV (%f) outside bounds!\n", uv[1]); }
+	}
+
+	if (uv[0] < 0.0f) { uv[0] = 0.0f; }
+	if (uv[0] > 1.0f) { uv[0] = 1.0f; }
+	if (uv[1] < 0.0f) { uv[1] = 0.0f; }
+	if (uv[1] > 1.0f) { uv[1] = 1.0f; }
+
+	// get the normal at "pt"
+	pDispTree->DispUVToSurfNormal(uv, ptNormal);
+
+	// get the new "pt"
+	pDispTree->DispUVToSurfPoint(uv, pt, 1.0f);
+}
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
