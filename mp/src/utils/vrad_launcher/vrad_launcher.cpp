@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
 		// If it didn't load the module above, then use the 
 		if ( !pModule )
 		{
-			strcpy( dllName, "vrad_dll.dll" );
+			strcpy( dllName, "vrad_mod.dll" );
 			pModule = Sys_LoadModule( dllName );
 		}
 		

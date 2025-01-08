@@ -394,6 +394,7 @@ struct dheader_t
 // level feature flags
 #define LVLFLAGS_BAKED_STATIC_PROP_LIGHTING_NONHDR 0x00000001	// was processed by vrad with -staticproplighting, no hdr data
 #define LVLFLAGS_BAKED_STATIC_PROP_LIGHTING_HDR    0x00000002   // was processed by vrad with -staticproplighting, in hdr
+#define LVLFLAGS_LIGHTMAP_HAS_ALPHA				   0x00010000   // compiled with our own modded vrad which contains lightmap alpha
 
 struct dflagslump_t
 {

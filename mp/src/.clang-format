@@ -14,13 +14,14 @@ BraceWrapping:
   AfterControlStatement: true
   AfterEnum: true
   AfterFunction: true
-  AfterNamespace: false
+  AfterNamespace: true
   AfterStruct: true
   BeforeCatch: true
   BeforeElse: true
   IndentBraces: false
 IndentCaseLabels: true
 IndentPPDirectives: None
+NamespaceIndentation: All
 KeepEmptyLinesAtTheStartOfBlocks: false
 SortIncludes: false
 SpaceAfterCStyleCast: true

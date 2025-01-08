@@ -804,8 +804,7 @@ void FinalLightFace( int iThread, int facenum )
 				baseSampleOk = false;
 			}
 
-			int bumpSample;
-			for( bumpSample = 0; bumpSample < bumpSampleCount; bumpSample++ )
+			for( int bumpSample = 0; bumpSample < bumpSampleCount; bumpSample++ )
 			{
 				// clip from the bottom first
 				// garymct: minlight is a per entity minimum light value?
@@ -845,12 +844,16 @@ void FinalLightFace( int iThread, int facenum )
 
 				pdata[bumpSample] += 4;
 			}
+			
+			// write sun amount as lightmap alpha
+			{
+				for (int bumpSample = 0; bumpSample < bumpSampleCount; bumpSample++)
+				{
+					pdata[bumpSampleCount][bumpSample] = uint8(clamp(lb[bumpSample].m_flDirectSunAmount, 0.0f, 1.0f) * 255.0f + 0.5f);
+				}
 
-			pdata[bumpSampleCount][0] = uint8(clamp(lb[0].m_flDirectSunAmount, 0.0f, 1.0f) * 255.0f + 0.5f);
-			pdata[bumpSampleCount][1] = uint8(clamp(lb[1].m_flDirectSunAmount, 0.0f, 1.0f) * 255.0f + 0.5f);
-			pdata[bumpSampleCount][2] = uint8(clamp(lb[2].m_flDirectSunAmount, 0.0f, 1.0f) * 255.0f + 0.5f);
-			pdata[bumpSampleCount][3] = uint8(clamp(lb[3].m_flDirectSunAmount, 0.0f, 1.0f) * 255.0f + 0.5f);
-			pdata[bumpSampleCount] += 4;
+				pdata[bumpSampleCount] += 4;
+			}
 		}
 		FreeRadial( rad );
 		if (prad)

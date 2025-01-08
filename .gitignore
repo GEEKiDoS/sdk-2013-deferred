@@ -86,4 +86,6 @@ config.cfg
 
 # shader files
 *.tmp
-
+*.bsp
+*.ain
+*.lst

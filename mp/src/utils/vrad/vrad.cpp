@@ -2206,6 +2206,8 @@ void VRAD_LoadBSP( char const *pFilename )
 		g_LevelFlags &= ~( LVLFLAGS_BAKED_STATIC_PROP_LIGHTING_HDR | LVLFLAGS_BAKED_STATIC_PROP_LIGHTING_NONHDR );
 	}
 
+	g_LevelFlags |= LVLFLAGS_LIGHTMAP_HAS_ALPHA;
+
 	// now, we need to set our face ptr depending upon hdr, and if hdr, init it
 	if (g_bHDR)
 	{
