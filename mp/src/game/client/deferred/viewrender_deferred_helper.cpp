@@ -18,6 +18,9 @@
 #pragma comment(lib, "Psapi.lib")
 #endif
 
+#include <xmmintrin.h>
+#include <immintrin.h>
+
 #include "tier0/memdbgon.h"
 
 namespace Memory
@@ -167,6 +170,49 @@ void DispInfo_DrawDecalsGroup( int iGroup, int iTreeType )
 	return DispInfo_DrawDecalsGroupOriginal( iGroup, iTreeType );
 }
 
+namespace LightmapHook
+{
+	using lightmap_alpha_t = uint8_t[4];
+	using blocklights_t = Vector4D[MAX_LIGHTMAP_DIM_INCLUDING_BORDER * MAX_LIGHTMAP_DIM_INCLUDING_BORDER];
+
+	blocklights_t* blocklights;
+
+	static subhook::Hook* AccumulateLightstylesHook = nullptr;
+	static void AccumulateLightstyles(ColorRGBExp32* pLightmap, int lightmapSize, float scalar)
+	{
+		lightmap_alpha_t* pSunAmount = reinterpret_cast<lightmap_alpha_t*>(pLightmap + lightmapSize);
+
+		for (int i = 0; i < lightmapSize; ++i)
+		{
+			blocklights[0][i][0] += scalar * TexLightToLinear(pLightmap[i].r, pLightmap[i].exponent);
+			blocklights[0][i][1] += scalar * TexLightToLinear(pLightmap[i].g, pLightmap[i].exponent);
+			blocklights[0][i][2] += scalar * TexLightToLinear(pLightmap[i].b, pLightmap[i].exponent);
+			blocklights[0][i][3] += scalar * pSunAmount[i][0] / 255.0f;
+		}
+	}
+
+	static subhook::Hook* AccumulateBumpedLightstylesHook = nullptr;
+	static void AccumulateBumpedLightstyles(ColorRGBExp32* pLightmap, int lightmapSize, float scalar)
+	{
+		ColorRGBExp32* pBumpedLightmaps[3];
+		pBumpedLightmaps[0] = pLightmap + lightmapSize;
+		pBumpedLightmaps[1] = pLightmap + 2 * lightmapSize;
+		pBumpedLightmaps[2] = pLightmap + 3 * lightmapSize;
+
+		lightmap_alpha_t* pSunAmount = reinterpret_cast<lightmap_alpha_t*>(pLightmap + 4 * lightmapSize);
+
+		for (int j = 0; j < NUM_BUMP_VECTS + 1; j++)
+		{
+			for (int i = 0; i < lightmapSize; ++i)
+			{
+				blocklights[j][i][0] += scalar * TexLightToLinear(pLightmap[i].r, pLightmap[i].exponent);
+				blocklights[j][i][1] += scalar * TexLightToLinear(pLightmap[i].g, pLightmap[i].exponent);
+				blocklights[j][i][2] += scalar * TexLightToLinear(pLightmap[i].b, pLightmap[i].exponent);
+				blocklights[j][i][3] += scalar * pSunAmount[i][j] / 255.0f;
+			}
+		}
+	}
+}
 
 static class AutoHook : public CAutoGameSystem
 {
@@ -204,6 +250,21 @@ public:
 
 #undef HOOK_FUNC
 
+		// it is expected not able to load the map after this...
+		// or maybe, but with broken lightmaps...
+		{
+			auto engineBase = reinterpret_cast<uint8_t*>(engineDll);
+			LightmapHook::AccumulateLightstylesHook = new subhook::Hook(engineBase + 0xF2690, LightmapHook::AccumulateLightstyles);
+			LightmapHook::AccumulateBumpedLightstylesHook = new subhook::Hook(engineBase + 0xF2430, LightmapHook::AccumulateBumpedLightstyles);
+
+			if (LightmapHook::AccumulateLightstylesHook->Install() &&
+				LightmapHook::AccumulateBumpedLightstylesHook->Install())
+			{
+				Msg("successfully installed lightmap hooks\n");
+			}
+		}
+
+	
 		//g_WorldStaticMeshes = reinterpret_cast<CUtlVector<IMesh*>*>(reinterpret_cast<byte*>( engineDll ) + 0x5AD2A8);
 
 		return true;
