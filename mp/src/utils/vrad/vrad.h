@@ -116,6 +116,7 @@ struct transfer_t
 struct LightingValue_t
 {
 	Vector m_vecLighting;
+	Vector m_vecSunLighting;
 	float m_flDirectSunAmount;
 
 	FORCEINLINE bool IsValid( void ) const
@@ -131,18 +132,21 @@ struct LightingValue_t
 	FORCEINLINE void Zero( void )
 	{
 		m_vecLighting.Init( 0, 0, 0 );
+		m_vecSunLighting.Init( 0, 0, 0 );
 		m_flDirectSunAmount = 0.0;
 	}
 	
 	FORCEINLINE void Scale( float m_flScale )
 	{
 		m_vecLighting *= m_flScale;
+		m_vecSunLighting *= m_flScale;
 		m_flDirectSunAmount *= m_flScale;
 	}
 
 	FORCEINLINE void AddWeighted( LightingValue_t const &src, float flWeight )
 	{
 		m_vecLighting += flWeight * src.m_vecLighting;
+		m_vecSunLighting += flWeight * src.m_vecSunLighting;
 		m_flDirectSunAmount += flWeight * src.m_flDirectSunAmount;
 	}
 
@@ -163,17 +167,34 @@ struct LightingValue_t
 		Assert( this->IsValid() );
 	}
 
+	FORCEINLINE void AddSunLight( float flAmount, Vector const &vecColor, float flSunAmount = 0.0 )
+	{
+		VectorMA( m_vecLighting, flAmount, vecColor, m_vecLighting );
+		VectorMA( m_vecSunLighting, flAmount, vecColor, m_vecSunLighting);
+		m_flDirectSunAmount += flSunAmount;
+		Assert( this->IsValid() );
+	}
 
 	FORCEINLINE void AddLight( LightingValue_t const &src )
 	{
 		m_vecLighting += src.m_vecLighting;
+		m_vecSunLighting += src.m_vecSunLighting;
 		m_flDirectSunAmount += src.m_flDirectSunAmount;
+		
+		Assert( this->IsValid() );
+	}
+
+	FORCEINLINE void AddLightWithoutSun( LightingValue_t const &src )
+	{
+		m_vecLighting += src.m_vecLighting;
+		
 		Assert( this->IsValid() );
 	}
 	
 	FORCEINLINE void Init( float x, float y, float z )
 	{
 		m_vecLighting.Init( x, y, z );
+		m_vecSunLighting.Init( x, y, z );
 		m_flDirectSunAmount = 0.0;
 	}
 

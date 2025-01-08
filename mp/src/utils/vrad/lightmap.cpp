@@ -2635,12 +2635,16 @@ static void GatherSampleLightAt4Points( SSE_SampleInfo_t &info, int sampleIdx, i
         {
             for ( int i = 0; i < numSamples; i++ )
             {
-                float amount = SubFloat(fxdot[n], i);
                 if (dl->light.type == emit_skylight)
-                    amount = 0;
-
-                pLightmaps[n][sampleIdx + i].AddLight( amount, dl->light.intensity,
-                                                       SubFloat( out.m_flSunAmount[n], i ) );
+                {
+                    pLightmaps[n][sampleIdx + i].AddSunLight(SubFloat(fxdot[n], i), dl->light.intensity,
+                                                             SubFloat(out.m_flSunAmount[n], i));
+                }
+                else
+                {
+                    pLightmaps[n][sampleIdx + i].AddLight(SubFloat(fxdot[n], i), dl->light.intensity,
+                                                          SubFloat(out.m_flSunAmount[n], i));
+                }
             }
         }
     }
@@ -2710,12 +2714,13 @@ static void ResampleLightAt4Points( SSE_SampleInfo_t &info, int lightStyleIndex,
         {
             for ( int n = 0; n < info.m_NormalCount; ++n )
             {
-                float amount = SubFloat(fxdot[n], i);
                 if (dl->light.type == emit_skylight)
-                    amount = 0;
-
-                pLightmap[i][n].AddLight( amount, dl->light.intensity,
-                                          SubFloat( out.m_flSunAmount[n], i ) );
+                    pLightmap[i][n].AddSunLight(SubFloat(fxdot[n], i), dl->light.intensity,
+                                             SubFloat(out.m_flSunAmount[n], i));
+                else
+                    pLightmap[i][n].AddLight(SubFloat(fxdot[n], i), dl->light.intensity,
+                                             SubFloat(out.m_flSunAmount[n], i));
+                
             }
         }
     }

@@ -783,7 +783,7 @@ void FinalLightFace( int iThread, int facenum )
 
 				for( bumpSample = 0; bumpSample < bumpSampleCount; ++bumpSample )
 				{
-					lb[bumpSample].AddLight( v[bumpSample] );
+					lb[bumpSample].AddLightWithoutSun( v[bumpSample] );
 				}
 			}
 
@@ -837,9 +837,11 @@ void FinalLightFace( int iThread, int facenum )
 				pdata[bumpSample][2] = randomColor[2] / ( bumpSample + 1 );
 				pdata[bumpSample][3] = 0;
 #else
+				// Don't include sunlight in lightmap, but keeps the bounced light
+				Vector lightingWithoutSun = lb[bumpSample].m_vecLighting - lb[bumpSample].m_vecSunLighting;
+
 				// convert to a 4 byte r,g,b,signed exponent format
-				VectorToColorRGBExp32( Vector( lb[bumpSample].m_vecLighting.x, lb[bumpSample].m_vecLighting.y,
-											   lb[bumpSample].m_vecLighting.z ), *( ColorRGBExp32 *)pdata[bumpSample] );
+				VectorToColorRGBExp32(lightingWithoutSun, *( ColorRGBExp32 *)pdata[bumpSample] );
 #endif
 
 				pdata[bumpSample] += 4;
