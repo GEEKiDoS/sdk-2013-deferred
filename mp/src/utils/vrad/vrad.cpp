@@ -2326,6 +2326,9 @@ void VRAD_Finish()
 
 	Msg( "Writing %s\n", source );
 	VMPI_SetCurrentStage( "WriteBSPFile" );
+
+	// finally use the light data without sun
+	pdlightdata = &dlightdata_nosun;
 	WriteBSPFile(source);
 
 	if ( g_bDumpPatches )

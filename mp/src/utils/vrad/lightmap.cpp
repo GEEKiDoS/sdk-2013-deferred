@@ -3507,6 +3507,7 @@ void BuildPatchLights( int facenum )
   PrecompLightmapOffsets
   =============
 */
+CUtlVector<byte> dlightdata_nosun;
 
 void PrecompLightmapOffsets()
 {
@@ -3562,6 +3563,7 @@ void PrecompLightmapOffsets()
     if ( g_pIncremental && pdlightdata->Count() ) return;
 
     pdlightdata->SetSize( lightdatasize );
+    dlightdata_nosun.SetSize( lightdatasize );
 }
 
 // Clamp the three values for bumped lighting such that we trade off directionality for brightness.

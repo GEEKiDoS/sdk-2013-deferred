@@ -554,7 +554,10 @@ inline static int VectorToColorRGBExp32_CalcExponent( const float *pin )
 	return expComponent;
 }
 
-
+float VectorToColorRGBExp32_CalcLumanice(const Vector& vin)
+{
+	return FastSqrt(vin.x * vin.x * 0.299 + vin.y * vin.y * 0.587 + vin.z * vin.z * 0.114);
+}
 
 /// Slightly faster version of the function to turn a float-vector color into 
 /// a compressed-exponent notation 32bit color. However, still not SIMD optimized.
@@ -568,35 +571,11 @@ void VectorToColorRGBExp32( const Vector& vin, ColorRGBExp32 &c )
 	Assert( s_bMathlibInitialized );
 	Assert( vin.x >= 0.0f && vin.y >= 0.0f && vin.z >= 0.0f );
 
-	// work out which of the channels is the largest ( we will use that to map the exponent )
-	// this is a sluggish branch-based decision tree -- most architectures will offer a [max]
-	// assembly opcode to do this faster.
-	const float *pMax;
-	if (vin.x > vin.y)
-	{
-		if (vin.x > vin.z)
-		{
-			pMax = &vin.x;
-		}
-		else
-		{
-			pMax = &vin.z;
-		}
-	}
-	else
-	{
-		if (vin.y > vin.z)
-		{
-			pMax = &vin.y;
-		}
-		else
-		{
-			pMax = &vin.z;
-		}
-	}
-
+	// we will use lumanice to map the exponent
+	const float lumanice = VectorToColorRGBExp32_CalcLumanice( vin );
+;
 	// now work out the exponent for this luxel. 
-	signed int exponent = VectorToColorRGBExp32_CalcExponent( pMax );
+	signed int exponent = VectorToColorRGBExp32_CalcExponent( &lumanice);
 
 	// make sure the exponent fits into a signed byte.
 	// (in single precision format this is assured because it was a signed byte to begin with)
@@ -609,28 +588,9 @@ void VectorToColorRGBExp32( const Vector& vin, ColorRGBExp32 &c )
 		scalar = *reinterpret_cast<float *>(&fbits);
 	}
 
-	// We can totally wind up above 255 and that's okay--but above 256 would be right out.
-	Assert(vin.x * scalar < 256.0f && 
-		   vin.y * scalar < 256.0f && 
-		   vin.z * scalar < 256.0f);
-
-	// This awful construction is necessary to prevent VC2005 from using the 
-	// fldcw/fnstcw control words around every float-to-unsigned-char operation.
-	{
-		int red = (vin.x * scalar);
-		int green = (vin.y * scalar);
-		int blue = (vin.z * scalar);
-
-		c.r = red;
-		c.g = green;
-		c.b = blue;
-	}
-	/*
-	c.r = ( unsigned char )(vin.x * scalar);
-	c.g = ( unsigned char )(vin.y * scalar);
-	c.b = ( unsigned char )(vin.z * scalar);
-	*/
-
+	c.r = clamp(vin.x * scalar, 0.f, 255.f);
+	c.g = clamp(vin.y * scalar, 0.f, 255.f);
+	c.b = clamp(vin.z * scalar, 0.f, 255.f);
 	c.exponent = ( signed char )exponent;
 }
 
