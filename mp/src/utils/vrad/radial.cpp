@@ -649,7 +649,9 @@ void FinalLightFace( int iThread, int facenum )
 	LightingValue_t lb[NUM_BUMP_VECTS + 1], v[NUM_BUMP_VECTS + 1];
 	// +1 for lightmap alpha
 	unsigned char   *pdata[NUM_BUMP_VECTS + 1 + 1]; 
+#ifdef DIRECTLIGHT_IN_AMBIENT_CUBE
 	unsigned char   *pdata_nosun[NUM_BUMP_VECTS + 1 + 1]; 
+#endif
 	int				bumpSample;
 	radial_t	    *rad = NULL;
 	radial_t	    *prad = NULL;
@@ -739,7 +741,9 @@ void FinalLightFace( int iThread, int facenum )
 		for( bumpSample = 0; bumpSample < bumpSampleCount + 1; ++bumpSample )
 		{
 			pdata[bumpSample] = &(*pdlightdata)[f->lightofs + (k * bumpSampleCount + bumpSample) * fl->numluxels*4]; 
+#ifdef DIRECTLIGHT_IN_AMBIENT_CUBE
 			pdata_nosun[bumpSample] = &(dlightdata_nosun)[f->lightofs + (k * bumpSampleCount + bumpSample) * fl->numluxels*4];
+#endif
 		}
 
 		// Compute the average luxel color, but not for the bump samples
@@ -839,30 +843,44 @@ void FinalLightFace( int iThread, int facenum )
 				pdata[bumpSample][2] = randomColor[2] / ( bumpSample + 1 );
 				pdata[bumpSample][3] = 0;
 #else
-				// Don't include sunlight in lightmap, but keeps the bounced light
+				// Don't include directlight in lightmap, but keeps the bounced light
 				// Actually the ambient cube calculation is using this
-				// Just create another copy without sun
+				// PATCH: no we actually don't want direct light in ambient cube..
+				// Just create another copy without directlight
+#ifdef DIRECTLIGHT_IN_AMBIENT_CUBE
 				Vector lightingWithSun = lb[bumpSample].m_vecLighting;
-				Vector lightingWithoutSun = lb[bumpSample].m_vecLightingNoSun;
+#endif
+				Vector lightingWithoutSun = lb[bumpSample].m_vecLightingNoDirect;
 
 				// convert to a 4 byte r,g,b,signed exponent format
+#ifdef DIRECTLIGHT_IN_AMBIENT_CUBE
 				VectorToColorRGBExp32(lightingWithSun, *( ColorRGBExp32 *)pdata[bumpSample] );
 				VectorToColorRGBExp32(lightingWithoutSun, *( ColorRGBExp32 *)pdata_nosun[bumpSample] );
+#else
+				VectorToColorRGBExp32(lightingWithoutSun, *(ColorRGBExp32*)pdata[bumpSample]);
+#endif
 #endif
 
 				pdata[bumpSample] += 4;
+#ifdef DIRECTLIGHT_IN_AMBIENT_CUBE
 				pdata_nosun[bumpSample] += 4;
+#endif
 			}
 			
 			// write sun amount as lightmap alpha
 			{
 				for (int bumpSample = 0; bumpSample < bumpSampleCount; bumpSample++)
 				{
-					pdata[bumpSampleCount][bumpSample] = pdata_nosun[bumpSampleCount][bumpSample] = uint8(clamp(lb[bumpSample].m_flDirectSunAmount, 0.0f, 1.0f) * 255.0f + 0.5f);
+					pdata[bumpSampleCount][bumpSample] = uint8(clamp(lb[bumpSample].m_flDirectSunAmount, 0.0f, 1.0f) * 255.0f + 0.5f);
+#ifdef DIRECTLIGHT_IN_AMBIENT_CUBE
+					pdata_nosun[bumpSampleCount][bumpSample] = pdata[bumpSampleCount][bumpSample];
+#endif
 				}
 
 				pdata[bumpSampleCount] += 4;
+#ifdef DIRECTLIGHT_IN_AMBIENT_CUBE
 				pdata_nosun[bumpSampleCount] += 4;
+#endif
 			}
 		}
 		FreeRadial( rad );

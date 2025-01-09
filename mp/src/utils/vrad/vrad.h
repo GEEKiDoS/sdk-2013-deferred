@@ -82,6 +82,9 @@ struct directlight_t
 	float	toffset;
 
 	int		dorecalc; // position, vector, spot angle, etc.
+
+	bool	bakedOnly; // if not baked only, we render direct light in game only
+
 	IncrementalLightID	m_IncrementalID;
 
 	// hard-falloff lights (lights that fade to an actual zero). between m_flStartFadeDistance and
@@ -116,7 +119,7 @@ struct transfer_t
 struct LightingValue_t
 {
 	Vector m_vecLighting;
-	Vector m_vecLightingNoSun;
+	Vector m_vecLightingNoDirect;
 	float m_flDirectSunAmount;
 
 	FORCEINLINE bool IsValid( void ) const
@@ -132,21 +135,21 @@ struct LightingValue_t
 	FORCEINLINE void Zero( void )
 	{
 		m_vecLighting.Init( 0, 0, 0 );
-		m_vecLightingNoSun.Init( 0, 0, 0 );
+		m_vecLightingNoDirect.Init( 0, 0, 0 );
 		m_flDirectSunAmount = 0.0;
 	}
 	
 	FORCEINLINE void Scale( float m_flScale )
 	{
 		m_vecLighting *= m_flScale;
-		m_vecLightingNoSun *= m_flScale;
+		m_vecLightingNoDirect *= m_flScale;
 		m_flDirectSunAmount *= m_flScale;
 	}
 
 	FORCEINLINE void AddWeighted( LightingValue_t const &src, float flWeight )
 	{
 		m_vecLighting += flWeight * src.m_vecLighting;
-		m_vecLightingNoSun += flWeight * src.m_vecLightingNoSun;
+		m_vecLightingNoDirect += flWeight * src.m_vecLightingNoDirect;
 		m_flDirectSunAmount += flWeight * src.m_flDirectSunAmount;
 	}
 
@@ -163,12 +166,12 @@ struct LightingValue_t
 	FORCEINLINE void AddLight( float flAmount, Vector const &vecColor, float flSunAmount = 0.0 )
 	{
 		VectorMA( m_vecLighting, flAmount, vecColor, m_vecLighting );
-		VectorMA( m_vecLightingNoSun, flAmount, vecColor, m_vecLightingNoSun );
+		VectorMA(m_vecLightingNoDirect, flAmount, vecColor, m_vecLightingNoDirect);
 		m_flDirectSunAmount += flSunAmount;
 		Assert( this->IsValid() );
 	}
 
-	FORCEINLINE void AddSunLight( float flAmount, Vector const &vecColor, float flSunAmount = 0.0 )
+	FORCEINLINE void AddDirectLight( float flAmount, Vector const &vecColor, float flSunAmount = 0.0 )
 	{
 		VectorMA( m_vecLighting, flAmount, vecColor, m_vecLighting );
 		m_flDirectSunAmount += flSunAmount;
@@ -178,7 +181,7 @@ struct LightingValue_t
 	FORCEINLINE void AddLight( LightingValue_t const &src )
 	{
 		m_vecLighting += src.m_vecLighting;
-		m_vecLightingNoSun += src.m_vecLightingNoSun;
+		m_vecLightingNoDirect += src.m_vecLightingNoDirect;
 		m_flDirectSunAmount += src.m_flDirectSunAmount;
 		
 		Assert( this->IsValid() );
@@ -187,7 +190,7 @@ struct LightingValue_t
 	FORCEINLINE void AddBounceLight( LightingValue_t const &src )
 	{
 		m_vecLighting += src.m_vecLighting;
-		m_vecLightingNoSun += src.m_vecLighting;
+		m_vecLightingNoDirect += src.m_vecLighting;
 		
 		Assert( this->IsValid() );
 	}
@@ -195,7 +198,7 @@ struct LightingValue_t
 	FORCEINLINE void Init( float x, float y, float z )
 	{
 		m_vecLighting.Init( x, y, z );
-		m_vecLightingNoSun.Init( x, y, z );
+		m_vecLightingNoDirect.Init( x, y, z );
 		m_flDirectSunAmount = 0.0;
 	}
 
@@ -374,7 +377,9 @@ extern char		source[MAX_PATH];
 // active lights can see the face.
 extern CUtlVector<byte> g_FacesVisibleToLights;
 
+#ifdef DIRECTLIGHT_IN_AMBIENT_CUBE
 extern CUtlVector<byte> dlightdata_nosun;
+#endif
 
 void MakeTnodes (dmodel_t *bm);
 void PairEdges (void);

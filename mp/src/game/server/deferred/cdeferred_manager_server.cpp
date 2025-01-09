@@ -368,6 +368,9 @@ void CDeferredManagerServer::LevelInitPreEntity()
 			continue;
 		}
 
+		if (entity->GetBool("_baked_only", true))
+			continue;
+
 		for ( uint i = 0; i < lightCount; ++i )
 		{
 			const dworldlight_t& light = lights[i];

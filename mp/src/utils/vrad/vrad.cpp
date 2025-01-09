@@ -2923,8 +2923,10 @@ int RunVRAD( int argc, char **argv )
 
 	VRAD_ComputeOtherLighting();
 
+#ifdef DIRECTLIGHT_IN_AMBIENT_CUBE
 	// finally use the light data without sun
 	pdlightdata->CopyArray(dlightdata_nosun.Base(), dlightdata_nosun.Size());
+#endif
 
 	VRAD_Finish();
 

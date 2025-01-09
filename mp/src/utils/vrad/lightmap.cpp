@@ -1220,6 +1220,8 @@ static void ParseLightGeneric( entity_t *e, directlight_t *dl )
     }
     if ( g_bHDR )
         VectorScale( dl->light.intensity, FloatForKeyWithDefault( e, "_lightscaleHDR", 1.0 ), dl->light.intensity );
+
+    dl->bakedOnly = IntForKeyWithDefault(e, "_baked_only", 1);
 }
 
 static void SetLightFalloffParams( entity_t *e, directlight_t *dl )
@@ -1519,6 +1521,9 @@ static void ParseLightEnvironment( entity_t *e, directlight_t *dl )
     dl = AllocDLight( dest, false );
 
     ParseLightGeneric( e, dl );
+
+    // always disable direct light
+    dl->bakedOnly = false;
 
     char *angle_str = ValueForKeyWithDefault( e, "SunSpreadAngle" );
     if ( angle_str )
@@ -2623,7 +2628,7 @@ static void GatherSampleLightAt4Points( SSE_SampleInfo_t &info, int sampleIdx, i
             for ( int i = 0; i < numSamples; i++ )
             {
                 float amount = SubFloat(fxdot[0], i);
-                if (dl->light.type == emit_skylight)
+                if (dl->bakedOnly)
                     amount = 0;
 
                 g_pIncremental->AddLightToFace( dl->m_IncrementalID, info.m_FaceNum, sampleIdx + i, info.m_LightmapSize,
@@ -2635,9 +2640,9 @@ static void GatherSampleLightAt4Points( SSE_SampleInfo_t &info, int sampleIdx, i
         {
             for ( int i = 0; i < numSamples; i++ )
             {
-                if (dl->light.type == emit_skylight)
+                if (dl->bakedOnly)
                 {
-                    pLightmaps[n][sampleIdx + i].AddSunLight(SubFloat(fxdot[n], i), dl->light.intensity,
+                    pLightmaps[n][sampleIdx + i].AddDirectLight(SubFloat(fxdot[n], i), dl->light.intensity,
                                                              SubFloat(out.m_flSunAmount[n], i));
                 }
                 else
@@ -2714,8 +2719,8 @@ static void ResampleLightAt4Points( SSE_SampleInfo_t &info, int lightStyleIndex,
         {
             for ( int n = 0; n < info.m_NormalCount; ++n )
             {
-                if (dl->light.type == emit_skylight)
-                    pLightmap[i][n].AddSunLight(SubFloat(fxdot[n], i), dl->light.intensity,
+                if (dl->bakedOnly)
+                    pLightmap[i][n].AddDirectLight(SubFloat(fxdot[n], i), dl->light.intensity,
                                              SubFloat(out.m_flSunAmount[n], i));
                 else
                     pLightmap[i][n].AddLight(SubFloat(fxdot[n], i), dl->light.intensity,
@@ -3507,7 +3512,9 @@ void BuildPatchLights( int facenum )
   PrecompLightmapOffsets
   =============
 */
+#ifdef DIRECTLIGHT_IN_AMBIENT_CUBE
 CUtlVector<byte> dlightdata_nosun;
+#endif
 
 void PrecompLightmapOffsets()
 {
@@ -3563,7 +3570,9 @@ void PrecompLightmapOffsets()
     if ( g_pIncremental && pdlightdata->Count() ) return;
 
     pdlightdata->SetSize( lightdatasize );
+#ifdef DIRECTLIGHT_IN_AMBIENT_CUBE
     dlightdata_nosun.SetSize( lightdatasize );
+#endif
 }
 
 // Clamp the three values for bumped lighting such that we trade off directionality for brightness.
