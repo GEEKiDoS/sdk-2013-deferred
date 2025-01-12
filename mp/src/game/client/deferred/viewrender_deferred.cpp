@@ -224,7 +224,7 @@ public:
     virtual void PopView();
 
     virtual void CalcShadowView() = 0;
-    virtual void CommitData(){};
+    virtual void CommitData() {};
 
     virtual int GetShadowMode() = 0;
 
@@ -845,6 +845,7 @@ void CGBufferView::PushGBuffer( bool bInitial, float zScale, bool bClearDepth )
 {
     ITexture *pNormals = GetDefRT_Normals();
     ITexture *pDepth = GetDefRT_Depth();
+    ITexture *pSpecRough = GetDefRT_SpecRough();
 
     CMatRenderContextPtr pRenderContext( materials );
 
@@ -865,15 +866,9 @@ void CGBufferView::PushGBuffer( bool bInitial, float zScale, bool bClearDepth )
 
     if ( bClearDepth ) pRenderContext->ClearBuffers( false, true );
 
-    pRenderContext->SetRenderTargetEx( 1, GetDefRT_Lightmap() );
-    pRenderContext->SetRenderTargetEx( 2, pDepth );
-
-#if DEFCFG_DEFERRED_SHADING == 1
-    pRenderContext->SetRenderTargetEx( 3, pNormals );
-    pRenderContext->SetRenderTargetEx( 4, GetDefRT_Specular() );
-#elif !DEFCFG_LIGHTCTRL_PACKING
+    pRenderContext->SetRenderTargetEx( 1, pDepth );
+    pRenderContext->SetRenderTargetEx( 2, pSpecRough );
     pRenderContext->SetRenderTargetEx( 3, GetDefRT_LightCtrl() );
-#endif
 
     pRenderContext->SetIntRenderingParameter( INT_RENDERPARM_DEFERRED_RENDER_STAGE, DEFERRED_RENDER_STAGE_GBUFFER );
 
@@ -1229,7 +1224,7 @@ void CBaseShadowView::Setup( const CViewSetup &view, ITexture *pDepthTexture, IT
 
     m_bDrawWorldNormal = true;
 
-    m_DrawFlags = DF_DRAW_ENTITITES | DF_RENDER_UNDERWATER | DF_RENDER_ABOVEWATER;
+    m_DrawFlags = DF_DRAW_ENTITITES | DF_RENDER_UNDERWATER | DF_RENDER_ABOVEWATER | DF_SHADOW_DEPTH_MAP;
     m_ClearFlags = 0;
 
     CalcShadowView();
@@ -1888,6 +1883,7 @@ static int GetSourceRadBufferIndex( const int index )
 
 void CDeferredViewRender::BeginRadiosity( const CViewSetup &view )
 {
+#if DEFCFG_ENABLE_RADIOSITY
     Vector fwd;
     AngleVectors( view.angles, &fwd );
 
@@ -1953,6 +1949,7 @@ void CDeferredViewRender::BeginRadiosity( const CViewSetup &view )
     }
 
     UpdateRadiosityPosition();
+#endif
 }
 
 void CDeferredViewRender::UpdateRadiosityPosition()
@@ -1974,6 +1971,7 @@ void CDeferredViewRender::UpdateRadiosityPosition()
 
 void CDeferredViewRender::PerformRadiosityGlobal( const int iRadiosityCascade, const CViewSetup &view )
 {
+#if DEFCFG_ENABLE_RADIOSITY
     const int iSourceBuffer = GetSourceRadBufferIndex( iRadiosityCascade );
     const int iOffsetY = ( iRadiosityCascade == 1 ) ? RADIOSITY_BUFFER_RES_Y / 2 : 0;
 
@@ -1988,10 +1986,12 @@ void CDeferredViewRender::PerformRadiosityGlobal( const int iRadiosityCascade, c
     GetRadiosityScreenGrid( iRadiosityCascade )->Draw();
 
     pRenderContext->PopRenderTargetAndViewport();
+#endif
 }
 
 void CDeferredViewRender::EndRadiosity( const CViewSetup &view )
 {
+#if DEFCFG_ENABLE_RADIOSITY
     const int iNumPropagateSteps[2] = { deferred_radiosity_propagate_count.GetInt(),
                                         deferred_radiosity_propagate_count_far.GetInt() };
     const int iNumBlurSteps[2] = { deferred_radiosity_blur_count.GetInt(), deferred_radiosity_blur_count_far.GetInt() };
@@ -2048,10 +2048,12 @@ void CDeferredViewRender::EndRadiosity( const CViewSetup &view )
     DrawLightPassFullscreen( GetDeferredManager()->GetDeferredMaterial( DEF_MAT_LIGHT_RADIOSITY_BLEND ), view.width,
                              view.height );
 #endif
+#endif
 }
 
 void CDeferredViewRender::DebugRadiosity( const CViewSetup &view )
 {
+#if DEFCFG_ENABLE_RADIOSITY
 #if 0
 	Vector tmp[3] = { m_vecRadiosityOrigin[1],
 		m_vecRadiosityOrigin[1],
@@ -2185,6 +2187,7 @@ void CDeferredViewRender::DebugRadiosity( const CViewSetup &view )
         pRenderContext->MatrixMode( MATERIAL_MODEL );
         pRenderContext->PopMatrix();
     }
+#endif
 }
 
 void CDeferredViewRender::RenderCascadedShadows( const CViewSetup &view, const bool bEnableRadiosity )

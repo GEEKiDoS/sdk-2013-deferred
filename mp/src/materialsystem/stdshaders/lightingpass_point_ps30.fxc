@@ -23,6 +23,11 @@
 #include "common_ps_fxc.h"
 #include "common_deferred_fxc.h"
 
+#include "common_vertexlitgeneric_dx9.h"
+#include "common_lightmappedgeneric_fxc.h"
+#define SPECULAR 1
+#include "pbr_common_ps2_3_x.h"
+
 /*
 
 	Point lights:
@@ -43,9 +48,7 @@
 
 sampler sNormals							: register( s0 );
 sampler sDepth								: register( s1 );
-#if !DEFCFG_LIGHTCTRL_PACKING
-sampler sLightCtrl							: register( s2 );
-#endif
+sampler sSpecRough							: register( s2 );
 
 const float3 g_vecViewOrigin				: register( c0 );
 const float4 g_vecShadowMappingTweaks_0		: register( c1 );
@@ -79,7 +82,27 @@ struct PS_OUTPUT
 };
 
 
+float3 DoPointLightPBR(const int index, float3 normal,
+	float3 lightPos, float3 lightColor,
+	float lightToWorldDist, float3 worldPos,
+	float3 specular, float roughness)
+{
+	float lightIn = normalize(lightPos - worldPos);
+	
+	float3 outgoingLightDirection = normalize(g_vecViewOrigin.xyz - worldPos); // Lo
+	float lightDirectionAngle = max(0, dot(normal, outgoingLightDirection)); // cosLo
+	
+	float3 directLighting = calculateLight(lightIn, lightColor, outgoingLightDirection,
+                    normal, specular, roughness, 0.0, lightDirectionAngle, 0.5.xxx);
+	
+	float distFade = 1.0f - saturate( lightToWorldDist / g_flMixedData[ index ].w );
+	distFade *= distFade;
 
+	return directLighting * distFade;
+
+}
+
+#if OLD
 float4 DoPointLightBasic( const int index, float3 normal,
 	float3 vecWorldToLight, float lightToWorldDist,
 	float3 vecWorldRayInv,
@@ -117,7 +140,7 @@ float4 DoPointLightBasic( const int index, float3 normal,
 	return float4( litDot, lightAmount, flSpecular, distFade );
 #endif
 }
-
+#endif
 
 
 
@@ -152,20 +175,9 @@ PS_OUTPUT main( const PS_INPUT In )
 	float4 flNormalCtrl = tex2D( sNormals, vecTexcoords );
 	float3 flNormal = normalize( flNormalCtrl.xyz * 2.0f - 1.0f );
 
-	float phong_exp;
-	bool half_lambert, litface;
-#if DEFCFG_CHEAP_LIGHTS
-	phong_exp = half_lambert = litface = 0;
-#elif !DEFCFG_LIGHTCTRL_PACKING
-	{
-		float4 flLightCtrl = tex2D( sLightCtrl, vecTexcoords );
-		phong_exp = flLightCtrl.x;
-		half_lambert = flLightCtrl.y;
-		litface = flLightCtrl.z;
-	}
-#else
-	UnpackLightingControls( flNormalCtrl.a, phong_exp, half_lambert, litface );
-#endif
+	float4 specRough = tex2D(sSpecRough, vecTexcoords);
+	float3 specular = specRough.rgb;
+	float roughness = specRough.a;
 
 	float3 worldRayInv = -vecWorldRay;
 #if DEFCFG_BLINN_PHONG == 0
@@ -186,19 +198,22 @@ PS_OUTPUT main( const PS_INPUT In )
 			g_flMixedData[ iDataIndex + 4 ].xyz,
 			g_flMixedData[ iDataIndex + 5 ].xyz );
 
-		float4 localLight = DoPointLightBasic( iDataIndex, flNormal,
-									-vecDelta, dist, worldRayInv,
-									litface, half_lambert, phong_exp );
+		vecDelta = mul3x3(vecDelta, matRotation);
+		
+		float3 lightColor = g_flMixedData[iDataIndex + 1].xyz * 
+			DoCubemapCookie(sMixedSampler[iSamplerIndex + 1], vecDelta);
+		
+		float3 localLight = DoPointLightPBR(iDataIndex, flNormal,
+									g_flMixedData[iDataIndex].xyz, lightColor,
+									dist, worldPos,
+									specular, roughness
+		);
 
-		vecDelta = mul3x3( vecDelta, matRotation );
-
-		localLight.y *= PerformDualParaboloidShadow( sMixedSampler[ iSamplerIndex ],
+		localLight *= PerformDualParaboloidShadow(sMixedSampler[iSamplerIndex],
 			vecDelta, g_vecShadowMappingTweaks_0, g_vecShadowMappingTweaks_1,
 			dist, g_flMixedData[ iDataIndex ].w, g_flMixedData[ iDataIndex + 2 ].w );
 
-		flLight += DoLightFinalCookied( g_flMixedData[ iDataIndex + 1 ].xyz,
-			g_flMixedData[ iDataIndex + 2 ].xyz,
-			localLight, DoCubemapCookie( sMixedSampler[ iSamplerIndex + 1 ], vecDelta ) );
+		flLight.rgb += localLight;
 	}
 
 	for ( int i = 0; i < NUM_SHADOWED; i++ )
@@ -213,20 +228,21 @@ PS_OUTPUT main( const PS_INPUT In )
 		float3x3 matRotation = float3x3( g_flMixedData[ iDataIndex + 3 ].xyz,
 			g_flMixedData[ iDataIndex + 4 ].xyz,
 			g_flMixedData[ iDataIndex + 5 ].xyz );
+		
+		vecDelta = mul3x3(vecDelta, matRotation);
+		
+		float3 lightColor = g_flMixedData[iDataIndex + 1].xyz;
+		float3 localLight = DoPointLightPBR(iDataIndex, flNormal,
+									g_flMixedData[iDataIndex].xyz, lightColor,
+									dist, worldPos,
+									specular, roughness
+		);
 
-		float4 localLight = DoPointLightBasic( iDataIndex, flNormal,
-									-vecDelta, dist, worldRayInv,
-									litface, half_lambert, phong_exp );
-
-		vecDelta = mul3x3( vecDelta, matRotation );
-
-		localLight.y *= PerformDualParaboloidShadow( sMixedSampler[ iSamplerIndex ],
+		localLight *= PerformDualParaboloidShadow( sMixedSampler[ iSamplerIndex ],
 			vecDelta, g_vecShadowMappingTweaks_0, g_vecShadowMappingTweaks_1,
 			dist, g_flMixedData[ iDataIndex ].w, g_flMixedData[ iDataIndex + 2 ].w );
 
-		flLight += DoLightFinal( g_flMixedData[ iDataIndex + 1 ].xyz,
-			g_flMixedData[ iDataIndex + 2 ].xyz,
-			localLight );
+		flLight.rgb += localLight;
 	}
 
 	for ( int i = 0; i < NUM_COOKIE; i++ )
@@ -242,16 +258,19 @@ PS_OUTPUT main( const PS_INPUT In )
 		float3x3 matRotation = float3x3( g_flMixedData[ iDataIndex + 3 ].xyz,
 			g_flMixedData[ iDataIndex + 4 ].xyz,
 			g_flMixedData[ iDataIndex + 5 ].xyz );
+		
+		vecDelta = mul3x3(vecDelta, matRotation);
 
-		float4 localLight = DoPointLightBasic( iDataIndex, flNormal,
-									-vecDelta, dist, worldRayInv,
-									litface, half_lambert, phong_exp );
-
-		vecDelta = mul3x3( vecDelta, matRotation );
-
-		flLight += DoLightFinalCookied( g_flMixedData[ iDataIndex + 1 ].xyz,
-			g_flMixedData[ iDataIndex + 2 ].xyz,
-			localLight, DoCubemapCookie( sMixedSampler[ iSamplerIndex ], vecDelta ) );
+		float3 lightColor = g_flMixedData[iDataIndex + 1].xyz *
+			DoCubemapCookie(sMixedSampler[iSamplerIndex + 1], vecDelta);
+		
+		float3 localLight = DoPointLightPBR(iDataIndex, flNormal,
+									g_flMixedData[iDataIndex].xyz, lightColor,
+									dist, worldPos,
+									specular, roughness
+		);
+		
+		flLight.rgb += localLight;
 	}
 
 	for ( int i = 0; i < NUM_SIMPLE; i++ )
@@ -264,13 +283,15 @@ PS_OUTPUT main( const PS_INPUT In )
 		float3 vecDelta = worldPos - g_flMixedData[ iDataIndex ].xyz;
 		float dist = length( vecDelta );
 
-		float4 localLight = DoPointLightBasic( iDataIndex, flNormal,
-									-vecDelta, dist, worldRayInv,
-									litface, half_lambert, phong_exp );
+		float3 lightColor = g_flMixedData[iDataIndex + 1].xyz;
+		
+		float3 localLight = DoPointLightPBR(iDataIndex, flNormal,
+									g_flMixedData[iDataIndex].xyz, lightColor,
+									dist, worldPos,
+									specular, roughness
+		);
 
-		flLight += DoLightFinal( g_flMixedData[ iDataIndex + 1 ].xyz,
-			g_flMixedData[ iDataIndex + 2 ].xyz,
-			localLight );
+		flLight.rgb += localLight;
 	}
 
 	PS_OUTPUT Out;

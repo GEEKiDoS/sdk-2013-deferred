@@ -146,9 +146,7 @@ void DrawPassLightPass( const lightPassParms &info, CBaseVSShader *pShader, IMat
 
 		pShader->BindTexture( SHADER_SAMPLER0, GetDeferredExt()->GetTexture_Normals() );
 		pShader->BindTexture( SHADER_SAMPLER1, GetDeferredExt()->GetTexture_Depth() );
-#if !DEFCFG_LIGHTCTRL_PACKING
-		pShader->BindTexture( SHADER_SAMPLER2, GetDeferredExt()->GetTexture_LightCtrl() );
-#endif
+		pShader->BindTexture( SHADER_SAMPLER2, GetDeferredExt()->GetTexture_SpecularRoughness() );
 
 		int iSampler = 0;
 		int iShadow = 0;

@@ -8,7 +8,7 @@
 
 static CTextureReference g_tex_Normals;
 static CTextureReference g_tex_Depth;
-static CTextureReference g_tex_Lightmap;
+static CTextureReference g_tex_SpecularRoughness;
 #if ( DEFCFG_LIGHTCTRL_PACKING == 0 )
 static CTextureReference g_tex_LightCtrl;
 #endif
@@ -88,10 +88,10 @@ void InitDeferredRTs( bool bInitial )
 
     const ImageFormat fmt_depth = GetDeferredManager()->GetShadowDepthFormat();
     const ImageFormat fmt_depthColor = bShadowUseColor ? IMAGE_FORMAT_R32F : materials->GetNullTextureFormat();
-    const ImageFormat fmt_lightMap = IMAGE_FORMAT_RGBA16161616F;
-    const ImageFormat fmt_radAlbedo = IMAGE_FORMAT_RGB888;
-    const ImageFormat fmt_radNormal = IMAGE_FORMAT_RGB888;
-    const ImageFormat fmt_radBuffer = IMAGE_FORMAT_RGB888;
+    const ImageFormat fmt_specRough = IMAGE_FORMAT_RGBA8888;
+   // const ImageFormat fmt_radAlbedo = IMAGE_FORMAT_RGB888;
+    //const ImageFormat fmt_radNormal = IMAGE_FORMAT_RGB888;
+   // const ImageFormat fmt_radBuffer = IMAGE_FORMAT_RGB888;
 
     if ( fmt_depth == IMAGE_FORMAT_NV_DST16 || fmt_depth == IMAGE_FORMAT_ATI_DST16 )
         g_flDepthScalar = pow( 2.0, 16 );
@@ -111,11 +111,11 @@ void InitDeferredRTs( bool bInitial )
     const unsigned int shadowColorFlags =
         TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT | TEXTUREFLAGS_RENDERTARGET | TEXTUREFLAGS_POINTSAMPLE;
     const unsigned int projVGUIFlags = TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT | TEXTUREFLAGS_RENDERTARGET;
-    const unsigned int radAlbedoNormalFlags =
-        TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT | TEXTUREFLAGS_RENDERTARGET | TEXTUREFLAGS_POINTSAMPLE;
-    const unsigned int radBufferFlags = TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT | TEXTUREFLAGS_RENDERTARGET;
-    const unsigned int radNormalFlags =
-        TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT | TEXTUREFLAGS_RENDERTARGET | TEXTUREFLAGS_POINTSAMPLE;
+   // const unsigned int radAlbedoNormalFlags =
+   //     TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT | TEXTUREFLAGS_RENDERTARGET | TEXTUREFLAGS_POINTSAMPLE;
+   // const unsigned int radBufferFlags = TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT | TEXTUREFLAGS_RENDERTARGET;
+   // const unsigned int radNormalFlags =
+   //     TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT | TEXTUREFLAGS_RENDERTARGET | TEXTUREFLAGS_POINTSAMPLE;
 
     materials->BeginRenderTargetAllocation();
 
@@ -140,19 +140,10 @@ void InitDeferredRTs( bool bInitial )
         g_tex_LightCtrl.Init( materials->CreateNamedRenderTargetTextureEx2(
             DEFRTNAME_GBUFFER2, dummy, dummy, RT_SIZE_FULL_FRAME_BUFFER_ROUNDED_UP, fmt_gbuffer2,
             MATERIAL_RT_DEPTH_NONE, gbufferFlags, 0 ) );
-
-#elif DEFCFG_DEFERRED_SHADING == 1
-        g_tex_Albedo.Init( materials->CreateNamedRenderTargetTextureEx2(
-            DEFRTNAME_GBUFFER2, dummy, dummy, RT_SIZE_FULL_FRAME_BUFFER_ROUNDED_UP, fmt_gbuffer2,
-            MATERIAL_RT_DEPTH_SHARED, gbufferFlags, 0 ) );
-
-        g_tex_Specular.Init( materials->CreateNamedRenderTargetTextureEx2(
-            DEFRTNAME_GBUFFER3, dummy, dummy, RT_SIZE_FULL_FRAME_BUFFER_ROUNDED_UP, fmt_gbuffer3,
-            MATERIAL_RT_DEPTH_NONE, gbufferFlags, 0 ) );
 #endif
 
-        g_tex_Lightmap.Init( materials->CreateNamedRenderTargetTextureEx2(
-            DEFRTNAME_GBUFFER4, dummy, dummy, RT_SIZE_FULL_FRAME_BUFFER_ROUNDED_UP, fmt_lightMap,
+        g_tex_SpecularRoughness.Init( materials->CreateNamedRenderTargetTextureEx2(
+            DEFRTNAME_GBUFFER4, dummy, dummy, RT_SIZE_FULL_FRAME_BUFFER_ROUNDED_UP, fmt_specRough,
             MATERIAL_RT_DEPTH_NONE, gbufferFlags, 0 ) );
 
         g_tex_Lightaccum.Init( materials->CreateNamedRenderTargetTextureEx2(
@@ -336,7 +327,7 @@ void InitDeferredRTs( bool bInitial )
 #endif
                                              g_tex_Lightaccum );
 
-    GetDeferredExt()->CommitTexture_Lightmap(g_tex_Lightmap);
+    GetDeferredExt()->CommitTexture_SpecularRoughness(g_tex_SpecularRoughness);
 
     for ( int i = 0; i < MAX_SHADOW_ORTHO; i++ )
         GetDeferredExt()->CommitTexture_CascadedDepth(
@@ -413,10 +404,10 @@ ITexture *GetDefRT_Lightaccum()
     return g_tex_Lightaccum;
 }
 
-ITexture *GetDefRT_Lightmap()
+ITexture *GetDefRT_SpecRough()
 {
-    Assert( g_tex_Lightmap.IsValid() );
-    return g_tex_Lightmap;
+    Assert( g_tex_SpecularRoughness.IsValid() );
+    return g_tex_SpecularRoughness;
 }
 
 ITexture *GetDefRT_VolumePrepass()

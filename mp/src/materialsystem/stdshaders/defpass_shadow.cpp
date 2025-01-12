@@ -45,7 +45,7 @@ void DrawPassShadowPass( const defParms_shadow &info, CBaseVSShader *pShader, IM
     const bool bModel = info.bModel;
     const bool bIsDecal = IS_FLAG_SET( MATERIAL_VAR_DECAL );
     const bool bFastVTex = g_pHardwareConfig->HasFastVertexTextures();
-    const bool bNoCull = IS_FLAG_SET( MATERIAL_VAR_NOCULL );
+    const bool bNoCull = true; // IS_FLAG_SET( MATERIAL_VAR_NOCULL );
 
     const bool bAlbedo = PARM_TEX( info.iAlbedo );
     const bool bAlbedo2 = PARM_TEX( info.iAlbedo2 );

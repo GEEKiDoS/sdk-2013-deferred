@@ -2,10 +2,6 @@
 // !$BUMPMAP2 && $BLENDMODULATE
 // !$BUMPMAP && $BUMPMAP2
 // $MODEL && $BUMPMAP2
-// $DECAL && $BLENDMODULATE
-// $DECAL && $BUMPMAP
-// $DECAL && $NOCULL
-// $DECAL && $PHONGMAP
 // defined $HDRTYPE && defined $HDRENABLED && !$HDRTYPE && $HDRENABLED
 // defined $PIXELFOGTYPE && defined $WRITEWATERFOGTODESTALPHA && ( $PIXELFOGTYPE != 1 ) && $WRITEWATERFOGTODESTALPHA
 // defined $LIGHTING_PREVIEW && defined $HDRTYPE && $LIGHTING_PREVIEW && $HDRTYPE != 0
@@ -25,16 +21,16 @@ class gbuffer_ps30_Static_Index
 	unsigned int m_nALPHATEST : 2;
 	unsigned int m_nBUMPMAP : 2;
 	unsigned int m_nNOCULL : 2;
-	unsigned int m_nPHONGMAP : 2;
 	unsigned int m_nBUMPMAP2 : 2;
 	unsigned int m_nBLENDMODULATE : 2;
+	unsigned int m_nSPECULAR : 2;
 #ifdef _DEBUG
 	bool m_bALPHATEST : 1;
 	bool m_bBUMPMAP : 1;
 	bool m_bNOCULL : 1;
-	bool m_bPHONGMAP : 1;
 	bool m_bBUMPMAP2 : 1;
 	bool m_bBLENDMODULATE : 1;
+	bool m_bSPECULAR : 1;
 #endif	// _DEBUG
 public:
 	void SetALPHATEST( int i )
@@ -64,15 +60,6 @@ public:
 #endif	// _DEBUG
 	}
 
-	void SetPHONGMAP( int i )
-	{
-		Assert( i >= 0 && i <= 1 );
-		m_nPHONGMAP = i;
-#ifdef _DEBUG
-		m_bPHONGMAP = true;
-#endif	// _DEBUG
-	}
-
 	void SetBUMPMAP2( int i )
 	{
 		Assert( i >= 0 && i <= 1 );
@@ -91,34 +78,43 @@ public:
 #endif	// _DEBUG
 	}
 
+	void SetSPECULAR( int i )
+	{
+		Assert( i >= 0 && i <= 1 );
+		m_nSPECULAR = i;
+#ifdef _DEBUG
+		m_bSPECULAR = true;
+#endif	// _DEBUG
+	}
+
 	gbuffer_ps30_Static_Index( IShaderShadow* pShaderShadow, IMaterialVar** params )
 	{
 		m_nALPHATEST = 0;
 		m_nBUMPMAP = 0;
 		m_nNOCULL = 0;
-		m_nPHONGMAP = 0;
 		m_nBUMPMAP2 = 0;
 		m_nBLENDMODULATE = 0;
+		m_nSPECULAR = 0;
 #ifdef _DEBUG
 		m_bALPHATEST = false;
 		m_bBUMPMAP = false;
 		m_bNOCULL = false;
-		m_bPHONGMAP = false;
 		m_bBUMPMAP2 = false;
 		m_bBLENDMODULATE = false;
+		m_bSPECULAR = false;
 #endif	// _DEBUG
 	}
 
 	int GetIndex() const
 	{
-		Assert( m_bALPHATEST && m_bBUMPMAP && m_bNOCULL && m_bPHONGMAP && m_bBUMPMAP2 && m_bBLENDMODULATE );
+		Assert( m_bALPHATEST && m_bBUMPMAP && m_bNOCULL && m_bBUMPMAP2 && m_bBLENDMODULATE && m_bSPECULAR );
 		AssertMsg( !( !m_nBUMPMAP2 && m_nBLENDMODULATE ), "Invalid combo combination ( !BUMPMAP2 && BLENDMODULATE )" );
 		AssertMsg( !( !m_nBUMPMAP && m_nBUMPMAP2 ), "Invalid combo combination ( !BUMPMAP && BUMPMAP2 )" );
-		return ( 1 * m_nALPHATEST ) + ( 2 * m_nBUMPMAP ) + ( 6 * m_nNOCULL ) + ( 12 * m_nPHONGMAP ) + ( 24 * m_nBUMPMAP2 ) + ( 48 * m_nBLENDMODULATE ) + 0;
+		return ( 1 * m_nALPHATEST ) + ( 2 * m_nBUMPMAP ) + ( 6 * m_nNOCULL ) + ( 12 * m_nBUMPMAP2 ) + ( 24 * m_nBLENDMODULATE ) + ( 48 * m_nSPECULAR ) + 0;
 	}
 };
 
-#define shaderStaticTest_gbuffer_ps30 psh_forgot_to_set_static_ALPHATEST + psh_forgot_to_set_static_BUMPMAP + psh_forgot_to_set_static_NOCULL + psh_forgot_to_set_static_PHONGMAP + psh_forgot_to_set_static_BUMPMAP2 + psh_forgot_to_set_static_BLENDMODULATE
+#define shaderStaticTest_gbuffer_ps30 psh_forgot_to_set_static_ALPHATEST + psh_forgot_to_set_static_BUMPMAP + psh_forgot_to_set_static_NOCULL + psh_forgot_to_set_static_BUMPMAP2 + psh_forgot_to_set_static_BLENDMODULATE + psh_forgot_to_set_static_SPECULAR
 
 
 class gbuffer_ps30_Dynamic_Index

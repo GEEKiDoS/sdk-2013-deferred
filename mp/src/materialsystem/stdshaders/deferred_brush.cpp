@@ -8,6 +8,9 @@
 
 BEGIN_VS_SHADER( DEFERRED_BRUSH, "" )
 	BEGIN_SHADER_PARAMS
+		SHADER_PARAM(MRAOTEXTURE, SHADER_PARAM_TYPE_TEXTURE, "", "Texture with metalness in R, roughness in G, ambient occlusion in B.");
+        SHADER_PARAM(EMISSIONTEXTURE, SHADER_PARAM_TYPE_TEXTURE, "", "Emission texture");
+		SHADER_PARAM(SPECULARTEXTURE, SHADER_PARAM_TYPE_TEXTURE, "", "Specular F0 RGB map");
 
 		SHADER_PARAM( BUMPMAP, SHADER_PARAM_TYPE_TEXTURE, "", "" )
 		SHADER_PARAM( SSBUMP, SHADER_PARAM_TYPE_BOOL, "", "" )
@@ -56,7 +59,8 @@ BEGIN_VS_SHADER( DEFERRED_BRUSH, "" )
 		p.iBumpmap = BUMPMAP;
 		p.iBumpmap2 = BUMPMAP2;
 
-		p.iPhongmap = PHONG_MAP;
+		p.iMraoTexture = MRAOTEXTURE;
+		p.iSpecularTexture = SPECULARTEXTURE;
 
 		p.iAlphatestRef = ALPHATESTREFERENCE;
 		p.iLitface = LITFACE;
@@ -214,7 +218,7 @@ BEGIN_VS_SHADER( DEFERRED_BRUSH, "" )
 				iDeferredRenderStage == DEFERRED_RENDER_STAGE_SHADOWPASS )
 			{
 				defParms_shadow parms_shadow;
-				SetupParmsShadow( parms_shadow );
+                SetupParmsShadow( parms_shadow );
 				DrawPassShadowPass( parms_shadow, this, params, pShaderShadow, pShaderAPI,
 					vertexCompression, pDefContext );
 			}

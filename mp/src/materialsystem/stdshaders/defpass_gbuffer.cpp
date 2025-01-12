@@ -49,7 +49,8 @@ void InitPassGBuffer( const defParms_gBuffer &info, CBaseVSShader *pShader, IMat
     if ( PARM_DEFINED( info.iAlbedo2 ) ) pShader->LoadTexture( info.iAlbedo2 );
 #endif
 
-    if ( PARM_DEFINED( info.iPhongmap ) ) pShader->LoadTexture( info.iPhongmap );
+    if ( PARM_DEFINED( info.iMraoTexture ) ) pShader->LoadTexture( info.iMraoTexture );
+    if ( PARM_DEFINED( info.iSpecularTexture ) ) pShader->LoadTexture( info.iSpecularTexture );
 }
 
 void DrawPassGBuffer( const defParms_gBuffer &info, CBaseVSShader *pShader, IMaterialVar **params,
@@ -67,7 +68,8 @@ void DrawPassGBuffer( const defParms_gBuffer &info, CBaseVSShader *pShader, IMat
     const bool bAlbedo2 = bDeferredShading && PARM_TEX( info.iAlbedo2 );
     const bool bBumpmap = PARM_TEX( info.iBumpmap );
     const bool bBumpmap2 = bBumpmap && PARM_TEX( info.iBumpmap2 );
-    const bool bPhongmap = PARM_TEX( info.iPhongmap );
+    const bool bMrao = PARM_TEX( info.iMraoTexture );
+    const bool bSpecular = PARM_TEX( info.iSpecularTexture );
 
     const bool bBlendmodulate = ( bAlbedo2 || bBumpmap2 ) && PARM_TEX( info.iBlendmodulate );
 
@@ -127,11 +129,9 @@ void DrawPassGBuffer( const defParms_gBuffer &info, CBaseVSShader *pShader, IMat
             }
         }
 
-        if ( bPhongmap )
-        {
-            pShaderShadow->EnableTexture( SHADER_SAMPLER2, true );
-            pShaderShadow->EnableSRGBRead( SHADER_SAMPLER2, false );
-        }
+        // Mrao
+        pShaderShadow->EnableTexture( SHADER_SAMPLER2, true );
+        pShaderShadow->EnableSRGBRead( SHADER_SAMPLER2, false );
 
         if ( bAlbedo2 || bBumpmap2 )
         {
@@ -141,7 +141,7 @@ void DrawPassGBuffer( const defParms_gBuffer &info, CBaseVSShader *pShader, IMat
             if ( bBlendmodulate ) pShaderShadow->EnableTexture( SHADER_SAMPLER4, true );
         }
 
-        if ( !bModel )
+        if ( bSpecular )
         {
             pShaderShadow->EnableTexture( SHADER_SAMPLER5, true );
             pShaderShadow->EnableSRGBRead( SHADER_SAMPLER5, false );
@@ -165,24 +165,14 @@ void DrawPassGBuffer( const defParms_gBuffer &info, CBaseVSShader *pShader, IMat
         SET_STATIC_VERTEX_SHADER_COMBO( TREESWAY, nTreeSwayMode );
         SET_STATIC_VERTEX_SHADER( gbuffer_vs30 );
 
-#if DEFCFG_DEFERRED_SHADING == 1
-        DECLARE_STATIC_PIXEL_SHADER( gbuffer_defshading_ps30 );
-#else
         DECLARE_STATIC_PIXEL_SHADER( gbuffer_ps30 );
         SET_STATIC_PIXEL_SHADER_COMBO( BUMPMAP2, bBumpmap2 );
-#endif
         SET_STATIC_PIXEL_SHADER_COMBO( ALPHATEST, bAlphatest );
         SET_STATIC_PIXEL_SHADER_COMBO( BUMPMAP, bBumpmap ? bSSBump ? 2 : 1 : 0 );
         SET_STATIC_PIXEL_SHADER_COMBO( NOCULL, bNoCull );
-        SET_STATIC_PIXEL_SHADER_COMBO( PHONGMAP, bPhongmap );
         SET_STATIC_PIXEL_SHADER_COMBO( BLENDMODULATE, bBlendmodulate );
-#if DEFCFG_DEFERRED_SHADING == 1
-        SET_STATIC_PIXEL_SHADER_COMBO( TWOTEXTURE, ( bAlbedo2 || bBumpmap2 ) );
-        SET_STATIC_PIXEL_SHADER_COMBO( DECAL, bIsDecal );
-        SET_STATIC_PIXEL_SHADER( gbuffer_defshading_ps30 );
-#else
+        SET_STATIC_PIXEL_SHADER_COMBO( SPECULAR, bSpecular );
         SET_STATIC_PIXEL_SHADER( gbuffer_ps30 );
-#endif
     }
     DYNAMIC_STATE
     {
@@ -210,23 +200,10 @@ void DrawPassGBuffer( const defParms_gBuffer &info, CBaseVSShader *pShader, IMat
 
             if ( bBumpmap ) tmpBuf.BindTexture( pShader, SHADER_SAMPLER1, info.iBumpmap );
 
-            if ( bPhongmap )
-                tmpBuf.BindTexture( pShader, SHADER_SAMPLER2, info.iPhongmap );
+            if ( bMrao )
+                tmpBuf.BindTexture( pShader, SHADER_SAMPLER2, info.iMraoTexture );
             else
-            {
-                float flPhongExp[2] = { 0 };
-                flPhongExp[0] = clamp( PARM_FLOAT( info.iPhongExp ), 0, 1 ) * 63.0f;
-
-                if ( bBumpmap2 || bAlbedo2 )
-                {
-                    PARM_VALIDATE( info.iPhongExp2 );
-
-                    flPhongExp[1] = clamp( PARM_FLOAT( info.iPhongExp2 ), 0, 1 ) * 63.0f;
-                    tmpBuf.SetPixelShaderConstant2( 2, flPhongExp[0], flPhongExp[1] );
-                }
-                else
-                    tmpBuf.SetPixelShaderConstant1( 2, flPhongExp[0] );
-            }
+                tmpBuf.BindStandardTexture( SHADER_SAMPLER2, TEXTURE_GREY );
 
             if ( bAlbedo2 || bBumpmap2 )
             {
@@ -246,6 +223,11 @@ void DrawPassGBuffer( const defParms_gBuffer &info, CBaseVSShader *pShader, IMat
                                                             info.iBlendmodulateTransform );
                     tmpBuf.BindTexture( pShader, SHADER_SAMPLER4, info.iBlendmodulate );
                 }
+            }
+
+            if ( bSpecular )
+            {
+                tmpBuf.BindTexture( SHADER_SAMPLER5, info.iSpecularTexture );
             }
 
             if ( bTreeSway )
@@ -276,11 +258,6 @@ void DrawPassGBuffer( const defParms_gBuffer &info, CBaseVSShader *pShader, IMat
 
             tmpBuf.SetPixelShaderConstant2( 1, IS_FLAG_SET( MATERIAL_VAR_HALFLAMBERT ) ? 1.0f : 0.0f,
                                             PARM_SET( info.iLitface ) ? 1.0f : 0.0f );
-
-            if ( !bModel )
-            {
-                tmpBuf.BindStandardTexture( SHADER_SAMPLER5, bBumpmap ? TEXTURE_LIGHTMAP : TEXTURE_LIGHTMAP_BUMPED );
-            }
 
             tmpBuf.End();
 

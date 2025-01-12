@@ -15,7 +15,7 @@ CDeferredExtension::CDeferredExtension()
 
     m_pTexNormals = NULL;
     m_pTexDepth = NULL;
-    m_pTexLightmap = NULL;
+    m_pTexSpecularRoughness = NULL;
     m_pTexLightAccum = NULL;
 #if ( DEFCFG_LIGHTCTRL_PACKING == 0 )
     m_pTexLightCtrl = NULL;
@@ -138,7 +138,7 @@ void CDeferredExtension::CommitTexture_General( ITexture *pTexNormals, ITexture 
 #endif
 }
 
-void CDeferredExtension::CommitTexture_Lightmap( ITexture *pLightmap ) { m_pTexLightmap = pLightmap; }
+void CDeferredExtension::CommitTexture_SpecularRoughness( ITexture *m_pTexSpecularRough ) { m_pTexSpecularRoughness = m_pTexSpecularRough; }
 
 void CDeferredExtension::CommitTexture_CascadedDepth( const int &index, ITexture *pTexShadowDepth )
 {

@@ -11,6 +11,8 @@
 // DYNAMIC:		"SKINNING"				"0..1"
 // DYNAMIC:		"MORPHING"				"0..1"
 
+// DYNAMIC:		"LIGHTMAPPED"			"0..1"
+
 // SKIP:		!$MODEL && $DECAL
 // SKIP:		!$BASETEXTURE2 && $BLENDMODULATE
 // SKIP:		$MODEL && $BASETEXTURE2
@@ -80,6 +82,11 @@ struct VS_INPUT
 #endif
 
 	float2 vTexCoord_0				: TEXCOORD0;
+	
+#if LIGHTMAPPED
+	float2 vTexCoord_Lightmap		: TEXCOORD1;
+	float2 vTexCoord_LightmapOffset	: TEXCOORD2;
+#endif
 
 #if MODEL
 
@@ -119,6 +126,11 @@ struct VS_OUTPUT
 	float3 worldToEye				: TEXCOORD3;
 #endif
 
+#if LIGHTMAPPED
+	float4 lightmapTexCoord1And2	: TEXCOORD4;
+	float4 lightmapTexCoord3		: TEXCOORD5;
+#endif
+	
 #if BASETEXTURE2
 	float4 vColor_0					: COLOR0;
 #endif
@@ -192,6 +204,13 @@ VS_OUTPUT main( const VS_INPUT In )
 
 #if EYEVEC
 	Out.worldToEye = flEyepos - worldPos;
+#endif
+	
+#if LIGHTMAPPED
+	Out.lightmapTexCoord1And2.xy = In.vTexCoord_Lightmap + In.vTexCoord_LightmapOffset;
+	Out.lightmapTexCoord1And2.wz = Out.lightmapTexCoord1And2.xy + In.vTexCoord_LightmapOffset;
+	Out.lightmapTexCoord3.xy = Out.lightmapTexCoord1And2.wz + In.vTexCoord_LightmapOffset;
+	Out.lightmapTexCoord3.wz = In.vTexCoord_Lightmap;
 #endif
 
 	return Out;

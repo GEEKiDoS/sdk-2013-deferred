@@ -8,6 +8,9 @@
 
 BEGIN_VS_SHADER( DEFERRED_MODEL, "" )
 	BEGIN_SHADER_PARAMS
+		SHADER_PARAM(MRAOTEXTURE, SHADER_PARAM_TYPE_TEXTURE, "", "Texture with metalness in R, roughness in G, ambient occlusion in B.");
+        SHADER_PARAM(EMISSIONTEXTURE, SHADER_PARAM_TYPE_TEXTURE, "", "Emission texture");
+		SHADER_PARAM(SPECULARTEXTURE, SHADER_PARAM_TYPE_TEXTURE, "", "Specular F0 RGB map");
 
 		SHADER_PARAM( BUMPMAP, SHADER_PARAM_TYPE_TEXTURE, "", "" )
 
@@ -64,7 +67,9 @@ BEGIN_VS_SHADER( DEFERRED_MODEL, "" )
 
 		p.iAlbedo = BASETEXTURE;
 		p.iBumpmap = BUMPMAP;
-		p.iPhongmap = PHONG_MAP;
+
+		p.iMraoTexture = MRAOTEXTURE;
+        p.iSpecularTexture = SPECULARTEXTURE;
 
 		p.iAlphatestRef = ALPHATESTREFERENCE;
 		p.iLitface = LITFACE;

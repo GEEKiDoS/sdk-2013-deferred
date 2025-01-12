@@ -13,13 +13,15 @@ ITexture *GetDefRT_Albedo();
 ITexture *GetDefRT_Specular();
 ITexture *GetDefRT_LightCtrl();
 ITexture *GetDefRT_Lightaccum();
-ITexture *GetDefRT_Lightmap();
+ITexture *GetDefRT_SpecRough();
 
 ITexture *GetDefRT_VolumePrepass();
 ITexture *GetDefRT_VolumetricsBuffer( int index );
 
+#if DEFCFG_ENABLE_RADIOSITY
 ITexture *GetDefRT_RadiosityBuffer( int index );
 ITexture *GetDefRT_RadiosityNormal( int index );
+#endif
 
 int GetShadowResolution_Spot();
 int GetShadowResolution_Point();

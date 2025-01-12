@@ -120,7 +120,7 @@ public:
 		AssertMsg( !( m_nMODEL && m_nBASETEXTURE2 ), "Invalid combo combination ( MODEL && BASETEXTURE2 )" );
 		AssertMsg( !( !m_nMODEL && m_nMORPHING_VTEX ), "Invalid combo combination ( !MODEL && MORPHING_VTEX )" );
 		AssertMsg( !( !m_nMODEL && m_nMORPHING_VTEX ), "Invalid combo combination ( !MODEL && MORPHING_VTEX )" );
-		return ( 8 * m_nMODEL ) + ( 16 * m_nDECAL ) + ( 32 * m_nMORPHING_VTEX ) + ( 64 * m_nEYEVEC ) + ( 128 * m_nBASETEXTURE2 ) + ( 256 * m_nBLENDMODULATE ) + ( 512 * m_nTREESWAY ) + 0;
+		return ( 16 * m_nMODEL ) + ( 32 * m_nDECAL ) + ( 64 * m_nMORPHING_VTEX ) + ( 128 * m_nEYEVEC ) + ( 256 * m_nBASETEXTURE2 ) + ( 512 * m_nBLENDMODULATE ) + ( 1024 * m_nTREESWAY ) + 0;
 	}
 };
 
@@ -132,10 +132,12 @@ class composite_vs30_Dynamic_Index
 	unsigned int m_nCOMPRESSED_VERTS : 2;
 	unsigned int m_nSKINNING : 2;
 	unsigned int m_nMORPHING : 2;
+	unsigned int m_nLIGHTMAPPED : 2;
 #ifdef _DEBUG
 	bool m_bCOMPRESSED_VERTS : 1;
 	bool m_bSKINNING : 1;
 	bool m_bMORPHING : 1;
+	bool m_bLIGHTMAPPED : 1;
 #endif	// _DEBUG
 public:
 	void SetCOMPRESSED_VERTS( int i )
@@ -165,24 +167,35 @@ public:
 #endif	// _DEBUG
 	}
 
+	void SetLIGHTMAPPED( int i )
+	{
+		Assert( i >= 0 && i <= 1 );
+		m_nLIGHTMAPPED = i;
+#ifdef _DEBUG
+		m_bLIGHTMAPPED = true;
+#endif	// _DEBUG
+	}
+
 	composite_vs30_Dynamic_Index( IShaderDynamicAPI* pShaderAPI )
 	{
 		m_nCOMPRESSED_VERTS = 0;
 		m_nSKINNING = 0;
 		m_nMORPHING = 0;
+		m_nLIGHTMAPPED = 0;
 #ifdef _DEBUG
 		m_bCOMPRESSED_VERTS = false;
 		m_bSKINNING = false;
 		m_bMORPHING = false;
+		m_bLIGHTMAPPED = false;
 #endif	// _DEBUG
 	}
 
 	int GetIndex() const
 	{
-		Assert( m_bCOMPRESSED_VERTS && m_bSKINNING && m_bMORPHING );
-		return ( 1 * m_nCOMPRESSED_VERTS ) + ( 2 * m_nSKINNING ) + ( 4 * m_nMORPHING ) + 0;
+		Assert( m_bCOMPRESSED_VERTS && m_bSKINNING && m_bMORPHING && m_bLIGHTMAPPED );
+		return ( 1 * m_nCOMPRESSED_VERTS ) + ( 2 * m_nSKINNING ) + ( 4 * m_nMORPHING ) + ( 8 * m_nLIGHTMAPPED ) + 0;
 	}
 };
 
-#define shaderDynamicTest_composite_vs30 vsh_forgot_to_set_dynamic_COMPRESSED_VERTS + vsh_forgot_to_set_dynamic_SKINNING + vsh_forgot_to_set_dynamic_MORPHING
+#define shaderDynamicTest_composite_vs30 vsh_forgot_to_set_dynamic_COMPRESSED_VERTS + vsh_forgot_to_set_dynamic_SKINNING + vsh_forgot_to_set_dynamic_MORPHING + vsh_forgot_to_set_dynamic_LIGHTMAPPED
 

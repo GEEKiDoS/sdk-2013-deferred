@@ -18,8 +18,10 @@ struct defParms_gBuffer
 
 	int iBumpmap;
 	int iBumpmap2;
-	int iPhongmap;
 	int iBlendmodulate;
+
+	int iMraoTexture;
+    int iSpecularTexture;
 
 	// control
 	int iAlphatestRef;

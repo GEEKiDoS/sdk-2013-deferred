@@ -160,7 +160,7 @@ public:
                                         ITexture *pTexAlbedo, ITexture *pTexSpecular,
 #endif
                                         ITexture *pTexLightAccum ) = 0;
-    virtual void CommitTexture_Lightmap( ITexture *pLightmap ) = 0;
+    virtual void CommitTexture_SpecularRoughness( ITexture *pLightmap ) = 0;
     virtual void CommitTexture_CascadedDepth( const int &index, ITexture *pTexShadowDepth ) = 0;
     virtual void CommitTexture_DualParaboloidDepth( const int &index, ITexture *pTexShadowDepth ) = 0;
     virtual void CommitTexture_ProjectedDepth( const int &index, ITexture *pTexShadowDepth ) = 0;
@@ -212,7 +212,7 @@ public:
                                         ITexture *pTexAlbedo, ITexture *pTexSpecular,
 #endif
                                         ITexture *pTexLightAccum );
-    virtual void CommitTexture_Lightmap( ITexture *pLightmap );
+    virtual void CommitTexture_SpecularRoughness( ITexture *pLightmap );
     virtual void CommitTexture_CascadedDepth( const int &index, ITexture *pTexShadowDepth );
     virtual void CommitTexture_DualParaboloidDepth( const int &index, ITexture *pTexShadowDepth );
     virtual void CommitTexture_ProjectedDepth( const int &index, ITexture *pTexShadowDepth );
@@ -257,7 +257,7 @@ public:
     inline ITexture *GetTexture_Albedo();
     inline ITexture *GetTexture_Specular();
 #endif
-    inline ITexture *GetTexture_Lightmap();
+    inline ITexture *GetTexture_SpecularRoughness();
     inline ITexture *GetTexture_ShadowDepth_Ortho( const int &index );
     inline ITexture *GetTexture_ShadowDepth_DP( const int &index );
     inline ITexture *GetTexture_ShadowDepth_Proj( const int &index );
@@ -296,7 +296,7 @@ private:
 
     ITexture *m_pTexNormals;
     ITexture *m_pTexDepth;
-    ITexture *m_pTexLightmap;
+    ITexture *m_pTexSpecularRoughness;
     ITexture *m_pTexLightAccum;
 #if ( DEFCFG_LIGHTCTRL_PACKING == 0 )
     ITexture *m_pTexLightCtrl;
@@ -355,7 +355,7 @@ int CDeferredExtension::GetActiveLights_NumRows() { return m_iCommon_NumRows; }
 ITexture *CDeferredExtension::GetTexture_Normals() { return m_pTexNormals; }
 ITexture *CDeferredExtension::GetTexture_Depth() { return m_pTexDepth; }
 ITexture *CDeferredExtension::GetTexture_LightAccum() { return m_pTexLightAccum; }
-ITexture *CDeferredExtension::GetTexture_Lightmap() { return m_pTexLightmap; }
+ITexture *CDeferredExtension::GetTexture_SpecularRoughness() { return m_pTexSpecularRoughness; }
 #if ( DEFCFG_LIGHTCTRL_PACKING == 0 )
 ITexture *CDeferredExtension::GetTexture_LightCtrl() { return m_pTexLightCtrl; }
 #elif DEFCFG_DEFERRED_SHADING == 1

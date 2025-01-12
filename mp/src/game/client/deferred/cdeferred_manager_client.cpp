@@ -379,6 +379,12 @@ void CDeferredManagerClient::InitializeDeferredMaterials()
 	}
 #endif
 
+	m_pKV_Def[DEF_MAT_GBUFFER_DEBUG] = new KeyValues( "DEBUG_GBUFFER" );
+    if ( m_pKV_Def[DEF_MAT_GBUFFER_DEBUG] != NULL )
+	{
+		m_pMat_Def[ DEF_MAT_GBUFFER_DEBUG ] = materials->CreateMaterial( "__debug_gbuffer", m_pKV_Def[ DEF_MAT_GBUFFER_DEBUG ] );
+	}
+
 	m_pKV_Def[ DEF_MAT_LIGHT_GLOBAL ] = new KeyValues( "LIGHTING_GLOBAL" );
 	if ( m_pKV_Def[ DEF_MAT_LIGHT_GLOBAL ] != NULL )
 		m_pMat_Def[ DEF_MAT_LIGHT_GLOBAL ] = materials->CreateMaterial( "__lightpass_global", m_pKV_Def[ DEF_MAT_LIGHT_GLOBAL ] );
@@ -458,7 +464,7 @@ void CDeferredManagerClient::InitializeDeferredMaterials()
 	radiosity
 
 	*/
-
+#if DEFCFG_ENABLE_RADIOSITY
 	m_pKV_Def[ DEF_MAT_LIGHT_RADIOSITY_GLOBAL ] = new KeyValues( "RADIOSITY_GLOBAL" );
 	if ( m_pKV_Def[ DEF_MAT_LIGHT_RADIOSITY_GLOBAL ] != NULL )
 		m_pMat_Def[ DEF_MAT_LIGHT_RADIOSITY_GLOBAL ] = materials->CreateMaterial( "__radpass_global", m_pKV_Def[ DEF_MAT_LIGHT_RADIOSITY_GLOBAL ] );
@@ -504,6 +510,7 @@ void CDeferredManagerClient::InitializeDeferredMaterials()
 	m_pKV_Def[ DEF_MAT_LIGHT_RADIOSITY_BLEND ] = new KeyValues( "RADIOSITY_BLEND" );
 	if ( m_pKV_Def[ DEF_MAT_LIGHT_RADIOSITY_BLEND ] != NULL )
 		m_pMat_Def[ DEF_MAT_LIGHT_RADIOSITY_BLEND ] = materials->CreateMaterial( "__radpass_blend", m_pKV_Def[ DEF_MAT_LIGHT_RADIOSITY_BLEND ] );
+#endif
 
 #if DEFCFG_DEFERRED_SHADING == 1
 	/*

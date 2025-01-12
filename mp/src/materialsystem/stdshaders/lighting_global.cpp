@@ -36,7 +36,7 @@ SHADER_DRAW
 
         DECLARE_STATIC_VERTEX_SHADER( defconstruct_vs30 );
         SET_STATIC_VERTEX_SHADER_COMBO( USEWORLDTRANSFORM, 0 );
-        SET_STATIC_VERTEX_SHADER_COMBO( SENDWORLDPOS, 0 );
+        SET_STATIC_VERTEX_SHADER_COMBO( SENDWORLDPOS, 1 );
         SET_STATIC_VERTEX_SHADER( defconstruct_vs30 );
 
         DECLARE_STATIC_PIXEL_SHADER( lightingpass_global_ps30 );
@@ -59,13 +59,14 @@ SHADER_DRAW
 
         BindTexture( SHADER_SAMPLER0, GetDeferredExt()->GetTexture_Normals() );
         BindTexture( SHADER_SAMPLER1, GetDeferredExt()->GetTexture_Depth() );
-#if !DEFCFG_LIGHTCTRL_PACKING
-        BindTexture( SHADER_SAMPLER3, GetDeferredExt()->GetTexture_LightCtrl() );
-#endif
+        BindTexture( SHADER_SAMPLER2, GetDeferredExt()->GetTexture_SpecularRoughness() );
+
+        CommitBaseDeferredConstants_Origin( pShaderAPI, 0 );
+        CommitGlobalLightForward( pShaderAPI, 1 );
 
         if ( data.bShadow )
         {
-            BindTexture( SHADER_SAMPLER2, GetDeferredExt()->GetTexture_ShadowDepth_Ortho( 0 ) );
+            BindTexture( SHADER_SAMPLER3, GetDeferredExt()->GetTexture_ShadowDepth_Ortho( 0 ) );
 
             COMPILE_TIME_ASSERT( CSM_USE_COMPOSITED_TARGET == 1 );  // This shader relies on composited cascades!
             COMPILE_TIME_ASSERT( SHADOW_NUM_CASCADES == 2 );        // This shader has been made for 2 cascades!
@@ -73,18 +74,8 @@ SHADER_DRAW
             CommitShadowProjectionConstants_Ortho_Composite( pShaderAPI, 2, 2 );
         }
 
-        CommitGlobalLightForward( pShaderAPI, 1 );
-
-        CommitBaseDeferredConstants_Frustum( pShaderAPI, VERTEX_SHADER_SHADER_SPECIFIC_CONST_0 );
-        CommitBaseDeferredConstants_Origin( pShaderAPI, 0 );
-
         pShaderAPI->SetPixelShaderConstant( 16, data.diff.Base() );
-        pShaderAPI->SetPixelShaderConstant( 17, data.ambh.Base() );
-        pShaderAPI->SetPixelShaderConstant( 18, MakeHalfAmbient( data.ambl, data.ambh ).Base() );
-
-        BindTexture( SHADER_SAMPLER4, GetDeferredExt()->GetTexture_Lightmap() );
-        float lightmapScale = pShaderAPI->GetLightMapScaleFactor();
-        pShaderAPI->SetPixelShaderConstant( 19, &lightmapScale );
+        CommitBaseDeferredConstants_Frustum( pShaderAPI, VERTEX_SHADER_SHADER_SPECIFIC_CONST_0 );
     }
 
     Draw();

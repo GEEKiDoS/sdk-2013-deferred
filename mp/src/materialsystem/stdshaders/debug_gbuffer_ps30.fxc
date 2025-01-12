@@ -1,0 +1,46 @@
+#include "common_ps_fxc.h"
+#include "common_deferred_fxc.h"
+
+sampler sNormals : register(s0);
+sampler sDepth : register(s1);
+sampler sSpecRough : register(s2);
+
+struct PS_INPUT
+{
+	float2 vTexCoord : TEXCOORD0;
+};
+
+struct PS_OUTPUT
+{
+	float4 vColor_0 : COLOR0;
+};
+
+PS_OUTPUT main(const PS_INPUT In)
+{
+	PS_OUTPUT Out = (PS_OUTPUT) 0;
+	
+	float2 uv = (In.vTexCoord - 0.5.xx) * 2;
+	
+	if (uv.x < 1.0 && uv.y < 1.0)
+	{
+		Out.vColor_0.rgb = tex2D(sNormals, uv).rgb;
+	}
+	else if (uv.x >= 1.0 && uv.y < 1.0)
+	{
+		float depth = tex2D(sDepth, uv - float2(1.0, 0.0)).r / 100;
+		Out.vColor_0.rgb = depth.xxx;
+	}
+	else if (uv.x < 1.0 && uv.y >= 1.0)
+	{
+		float4 specRough = tex2D(sSpecRough, uv - float2(0.0, 1.0));
+		Out.vColor_0.rgb = specRough.rgb;
+	}
+	else
+	{
+		float4 specRough = tex2D(sSpecRough, uv - float2(1.0, 1.0));
+		Out.vColor_0.rgb = specRough.a.xxx;
+	}
+
+	Out.vColor_0.a = 1.0;
+	return Out;
+}

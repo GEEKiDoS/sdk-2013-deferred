@@ -16,6 +16,7 @@ $Project "Shaders (Episodic)"
 		$File	"debug_lightingctrl.cpp"
 		$File	"debug_radiosity_grid.cpp"
 		$File	"debug_shadow.cpp"
+		$File	"debug_gbuffer.cpp"
 		$File	"deferred_brush.cpp"
 		$File	"deferred_decalModulate.cpp"
 		$File	"deferred_model.cpp"
@@ -39,5 +40,4 @@ $Project "Shaders (Episodic)"
 	}
 	
 	$Shaders	"deferred_shaders.txt"
-	$Shaders	"deferred_shaders_sm2.txt"
 }
