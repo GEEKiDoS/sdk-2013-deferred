@@ -133,7 +133,7 @@ float3 calculateLight(float3 lightIn, float3 lightIntensity, float3 lightOut, fl
 }
 
 // Get diffuse ambient light
-float3 ambientLookupLightmap(float3 normal, float3 EnvAmbientCube[6], float3 textureNormal, float4 lightmapTexCoord1And2, float4 lightmapTexCoord3, sampler LightmapSampler, float4 g_DiffuseModulation)
+float4 ambientLookupLightmap(float3 normal, float3 EnvAmbientCube[6], float3 textureNormal, float4 lightmapTexCoord1And2, float4 lightmapTexCoord3, sampler LightmapSampler, float4 g_DiffuseModulation)
 {
     float2 bumpCoord1;
     float2 bumpCoord2;
@@ -143,9 +143,9 @@ float3 ambientLookupLightmap(float3 normal, float3 EnvAmbientCube[6], float3 tex
             lightmapTexCoord1And2, lightmapTexCoord3.xy,
             bumpCoord1, bumpCoord2, bumpCoord3);
 
-    float3 lightmapColor1 = LightMapSample(LightmapSampler, bumpCoord1);
-    float3 lightmapColor2 = LightMapSample(LightmapSampler, bumpCoord2);
-    float3 lightmapColor3 = LightMapSample(LightmapSampler, bumpCoord3);
+    float4 lightmapColor1 = LightMapSample(LightmapSampler, bumpCoord1);
+    float4 lightmapColor2 = LightMapSample(LightmapSampler, bumpCoord2);
+    float4 lightmapColor3 = LightMapSample(LightmapSampler, bumpCoord3);
 
     float3 dp;
     dp.x = saturate(dot(textureNormal, bumpBasis[0]));
@@ -153,21 +153,21 @@ float3 ambientLookupLightmap(float3 normal, float3 EnvAmbientCube[6], float3 tex
     dp.z = saturate(dot(textureNormal, bumpBasis[2]));
     dp *= dp;
 
-    float3 diffuseLighting =    dp.x * lightmapColor1 +
+    float4 diffuseLighting =    dp.x * lightmapColor1 +
                                 dp.y * lightmapColor2 +
                                 dp.z * lightmapColor3;
 
     float sum = dot(dp, float3(1, 1, 1));
-    diffuseLighting *= g_DiffuseModulation.xyz / sum;
+    diffuseLighting.xyz *= g_DiffuseModulation.xyz / sum;
     return diffuseLighting;
 }
 
-float3 ambientLookup(float3 normal, float3 EnvAmbientCube[6], float3 textureNormal, float4 lightmapTexCoord1And2, float4 lightmapTexCoord3, sampler LightmapSampler, float4 g_DiffuseModulation)
+float4 ambientLookup(float3 normal, float3 EnvAmbientCube[6], float3 textureNormal, float4 lightmapTexCoord1And2, float4 lightmapTexCoord3, sampler LightmapSampler, float4 g_DiffuseModulation)
 {
 #if LIGHTMAPPED
     return ambientLookupLightmap(normal, EnvAmbientCube, textureNormal, lightmapTexCoord1And2, lightmapTexCoord3, LightmapSampler, g_DiffuseModulation);
 #else
-    return PixelShaderAmbientLight(normal, EnvAmbientCube);
+    return float4(PixelShaderAmbientLight(normal, EnvAmbientCube), 1.0f);
 #endif
 }
 

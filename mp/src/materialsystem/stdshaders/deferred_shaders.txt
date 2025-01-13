@@ -5,8 +5,8 @@ gbuffer_defshading_ps30.fxc
 shadowpass_vs30.fxc
 shadowpass_ps30.fxc
 
-composite_vs30.fxc
-composite_ps30.fxc
+composite_pbr_vs30.fxc
+composite_pbr_ps30.fxc
 
 defconstruct_vs30.fxc
 

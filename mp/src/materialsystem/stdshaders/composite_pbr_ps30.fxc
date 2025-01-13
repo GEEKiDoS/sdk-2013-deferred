@@ -1,0 +1,176 @@
+//==================================================================================================
+//
+// Physically Based Rendering pixel shader for brushes and models
+//
+//==================================================================================================
+
+// STATIC: "LIGHTMAPPED"                "0..1"
+// STATIC: "USEENVAMBIENT"              "0..1"
+// STATIC: "EMISSIVE"                   "0..1"
+// STATIC: "SPECULAR"                   "0..1"
+// STATIC:  "PARALLAXOCCLUSION"         "0..1"
+
+// DYNAMIC: "WRITEWATERFOGTODESTALPHA"  "0..1"
+// DYNAMIC: "PIXELFOGTYPE"              "0..1"
+// DYNAMIC: "WRITE_DEPTH_TO_DESTALPHA"  "0..1"
+
+// Can't write fog to alpha if there is no fog
+// SKIP: ($PIXELFOGTYPE == 0) && ($WRITEWATERFOGTODESTALPHA != 0)
+
+#include "common_ps_fxc.h"
+#include "common_lightmappedgeneric_fxc.h"
+#include "common_vertexlitgeneric_dx9.h"
+
+#include "pbr_common_ps2_3_x.h"
+
+// constants
+const float4 g_DiffuseModulation : register(c1);
+const float4 g_EyePos : register(c2);
+const float4 g_FogParams : register(c3);
+const float4 g_BaseColor : register(c4);
+const float4 g_sunColor : register(c5);
+#if PARALLAXOCCLUSION
+const float4 g_ParallaxParms : register( c6 );
+#define PARALLAX_DEPTH g_ParallaxParms.r
+#define PARALLAX_CENTER g_ParallaxParms.g
+#endif
+const float3 cAmbientCube[6] : register(c7);
+
+// samplers
+// Base map, selfillum in alpha
+sampler BaseTextureSampler : register(s0);
+// Normal map
+sampler NormalTextureSampler : register(s1);
+// Cubemap
+sampler EnvmapSampler : register(s2);
+// LightAccum Sampler, Sun Light in alpha
+sampler LightAccumSampler : register(s3);
+// Lightmap
+sampler LightmapSampler : register(s4);
+// MRAO texture
+sampler MRAOTextureSampler : register(s5);
+#if EMISSIVE
+// Emission texture
+sampler EmissionTextureSampler : register(s6);    
+#endif
+#if SPECULAR
+// Specular F0 texture
+sampler SpecularTextureSampler      : register(s7);    
+#endif
+
+#define ENVMAPLOD (g_EyePos.a)
+
+struct PS_INPUT
+{
+	float2 baseTexCoord : TEXCOORD0;
+	float3 worldNormal : TEXCOORD1;
+	float3 worldPos : TEXCOORD2;
+	float3 projPos : TEXCOORD3;
+	float4 lightmapTexCoord1And2 : TEXCOORD4;
+	float4 lightmapTexCoord3 : TEXCOORD5;
+	float2 screenPos : VPOS;
+};
+
+// Entry point
+float4 main(PS_INPUT i) : COLOR
+{
+#if USEENVAMBIENT
+    float3 EnvAmbientCube[6];
+    setupEnvMapAmbientCube(EnvAmbientCube, EnvmapSampler);
+#else
+#define EnvAmbientCube cAmbientCube
+#endif
+
+	float3 surfNormal = normalize(i.worldNormal);
+	float3 surfTangent;
+	float3 surfBase;
+	float flipSign;
+	float3x3 normalBasis = compute_tangent_frame(surfNormal, i.worldPos, i.baseTexCoord, surfTangent, surfBase, flipSign);
+
+#if PARALLAXOCCLUSION
+    float3 outgoingLightRay = g_EyePos.xyz - i.worldPos;
+    float3 outgoingLightDirectionTS = worldToRelative( outgoingLightRay, surfTangent, surfBase, surfNormal);
+    float2 correctedTexCoord = parallaxCorrect(i.baseTexCoord, outgoingLightDirectionTS , outgoingLightRay, i.worldNormal, NormalTextureSampler , PARALLAX_DEPTH , PARALLAX_CENTER);
+#else
+	float2 correctedTexCoord = i.baseTexCoord;
+#endif
+
+	float3 textureNormal = normalize((tex2D(NormalTextureSampler, correctedTexCoord).xyz - float3(0.5, 0.5, 0.5)) * 2);
+	float3 normal = normalize(mul(textureNormal, normalBasis)); // World Normal
+
+	float4 albedo = tex2D(BaseTextureSampler, correctedTexCoord);
+	albedo.xyz *= g_BaseColor.rgb;
+
+	float3 mrao = tex2D(MRAOTextureSampler, correctedTexCoord).xyz;
+	float metalness = mrao.x, roughness = mrao.y, ambientOcclusion = mrao.z;
+#if EMISSIVE
+    float3 emission = tex2D(EmissionTextureSampler, correctedTexCoord).xyz;
+#endif
+#if SPECULAR
+    float3 specular = tex2D(SpecularTextureSampler, correctedTexCoord).xyz;
+#endif
+    
+	textureNormal.y *= flipSign; // Fixup textureNormal for ambient lighting
+
+	float3 outgoingLightDirection = normalize(g_EyePos.xyz - i.worldPos); // Lo
+	float lightDirectionAngle = max(0, dot(normal, outgoingLightDirection)); // cosLo
+
+	float3 specularReflectionVector = 2.0 * lightDirectionAngle * normal - outgoingLightDirection; // Lr
+
+#if SPECULAR
+    float3 fresnelReflectance = specular.rgb; // F0
+#else
+	float3 dielectricCoefficient = 0.04; //F0 dielectric
+	float3 fresnelReflectance = lerp(dielectricCoefficient, albedo.rgb, metalness); // F0
+#endif
+
+    // Start ambient
+	float3 ambientLighting = 0.0;
+	float sunAmount = 0.0;
+	float4 lookupResult = ambientLookup(normal, EnvAmbientCube, textureNormal, i.lightmapTexCoord1And2, i.lightmapTexCoord3, LightmapSampler, g_DiffuseModulation);
+	float3 diffuseIrradiance = lookupResult.rgb;
+	sunAmount = lookupResult.a;
+        // return float4(diffuseIrradiance, 1); // testing diffuse irraciance
+	float3 ambientLightingFresnelTerm = fresnelSchlickRoughness(fresnelReflectance, lightDirectionAngle, roughness); // F
+#if SPECULAR
+        float3 diffuseContributionFactor = 1 - ambientLightingFresnelTerm; // kd
+#else
+	float3 diffuseContributionFactor = lerp(1 - ambientLightingFresnelTerm, 0, metalness);; // kd
+#endif
+	float3 diffuseIBL = diffuseContributionFactor * albedo.rgb * diffuseIrradiance;
+
+	float4 specularUV = float4(specularReflectionVector, roughness * ENVMAPLOD);
+	float3 lookupHigh = ENV_MAP_SCALE * texCUBElod(EnvmapSampler, specularUV).xyz;
+	float3 lookupLow = PixelShaderAmbientLight(specularReflectionVector, EnvAmbientCube);
+	float3 specularIrradiance = lerp(lookupHigh, lookupLow, roughness * roughness);
+	float3 specularIBL = specularIrradiance * EnvBRDFApprox(fresnelReflectance, roughness, lightDirectionAngle);
+
+	ambientLighting = (diffuseIBL + specularIBL) * ambientOcclusion;
+    // End ambient
+
+    // Start direct
+	float4 lightAccum = tex2D(LightAccumSampler, i.screenPos);
+	float3 directLighting = lightAccum.rgb;
+
+	directLighting += lightAccum.a * g_sunColor.rgb * sunAmount;
+    // End direct
+
+	float fogFactor = 0.0f;
+	fogFactor = CalcPixelFogFactor(PIXELFOGTYPE, g_FogParams, g_EyePos.z, i.worldPos.z, i.projPos.z);
+
+	float alpha = 0.0f;
+#if WRITEWATERFOGTODESTALPHA && (PIXELFOGTYPE == PIXEL_FOG_TYPE_HEIGHT)
+    alpha = fogFactor;
+#else
+	alpha = albedo.a;
+#endif
+
+	bool bWriteDepthToAlpha = (WRITE_DEPTH_TO_DESTALPHA != 0) && (WRITEWATERFOGTODESTALPHA == 0);
+
+	float3 combinedLighting = directLighting + ambientLighting;
+#if EMISSIVE
+    combinedLighting += emission;
+#endif
+		
+	return FinalOutput(float4(combinedLighting, alpha), fogFactor, PIXELFOGTYPE, TONEMAP_SCALE_LINEAR, bWriteDepthToAlpha, i.projPos.z);
+}

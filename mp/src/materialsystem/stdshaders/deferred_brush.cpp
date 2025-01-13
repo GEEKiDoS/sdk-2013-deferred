@@ -81,36 +81,16 @@ BEGIN_VS_SHADER( DEFERRED_BRUSH, "" )
 		p.iAlphatestRef = ALPHATESTREFERENCE;
 	}
 
-	void SetupParmsComposite( defParms_composite &p )
+	void SetupParmsComposite( PBR_Vars_t &p )
 	{
 		p.bModel = false;
-		p.iAlbedo = BASETEXTURE;
-		p.iAlbedo2 = BASETEXTURE2;
+		p.baseColor = BASETEXTURE;
+        p.mraoTexture = MRAOTEXTURE;
+        p.specularTexture = SPECULARTEXTURE;
+        p.emissionTexture = EMISSIONTEXTURE;
 
-		p.iEnvmap = ENVMAP;
-		p.iEnvmapMask = ENVMAPMASK;
-		p.iEnvmapMask2 = ENVMAPMASK2;
-		p.iEnvmapTint = ENVMAPTINT;
-		p.iEnvmapContrast = ENVMAPCONTRAST;
-		p.iEnvmapSaturation = ENVMAPSATURATION;
-
-		p.iSelfIllumTint = SELFILLUMTINT;
-		p.iSelfIllumMaskInEnvmapAlpha = SELFILLUM_ENVMAPMASK_ALPHA;
-		p.iSelfIllumFresnelModulate = SELFILLUMFRESNEL;
-		p.iSelfIllumMask = SELFILLUMMASK;
-
-		p.iAlphatestRef = ALPHATESTREFERENCE;
-
-		p.iPhongScale = PHONG_SCALE;
-		p.iPhongFresnel = PHONG_FRESNEL;
-
-		p.iBlendmodulate = BLENDMODULATETEXTURE;
-		p.iBlendmodulateTransform = BLENDMASKTRANSFORM;
-
-		p.iFresnelRanges = FRESNELRANGES;
-
-		p.iEnvmapParallax = ENVMAPPARALLAX;
-		p.iEnvmapOrigin = ENVMAPORIGIN;
+		p.emissionTexture = ENVMAP;
+		
 	}
 
 	bool DrawToGBuffer( IMaterialVar **params )
@@ -146,9 +126,9 @@ BEGIN_VS_SHADER( DEFERRED_BRUSH, "" )
 			InitParmsShadowPass( parms_shadow, this, params );
 		}
 
-		defParms_composite parms_composite;
+		PBR_Vars_t parms_composite;
 		SetupParmsComposite( parms_composite );
-		InitParmsComposite( parms_composite, this, params );
+		InitParmsCompositePBR( parms_composite, this, params );
 	}
 
 	SHADER_INIT
@@ -166,9 +146,9 @@ BEGIN_VS_SHADER( DEFERRED_BRUSH, "" )
 			InitPassShadowPass( parms_shadow, this, params );
 		}
 
-		defParms_composite parms_composite;
+		PBR_Vars_t parms_composite;
 		SetupParmsComposite( parms_composite );
-		InitPassComposite( parms_composite, this, params );
+        InitParmsCompositePBR( parms_composite, this, params );
 	}
 
 	SHADER_FALLBACK
@@ -230,9 +210,9 @@ BEGIN_VS_SHADER( DEFERRED_BRUSH, "" )
 		if ( pShaderShadow != NULL ||
 			iDeferredRenderStage == DEFERRED_RENDER_STAGE_COMPOSITION )
 		{
-			defParms_composite parms_composite;
+            PBR_Vars_t parms_composite;
 			SetupParmsComposite( parms_composite );
-			DrawPassComposite( parms_composite, this, params, pShaderShadow, pShaderAPI,
+			InitPassCompositePBR( parms_composite, this, params, pShaderShadow, pShaderAPI,
 				vertexCompression, pDefContext );
 		}
 		else

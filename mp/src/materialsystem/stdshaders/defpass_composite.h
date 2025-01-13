@@ -3,84 +3,41 @@
 
 class CDeferredPerMaterialContextData;
 
-struct defParms_composite
+// Variables for this shader
+struct PBR_Vars_t
 {
-	defParms_composite()
-	{
-		Q_memset( this, 0xFF, sizeof( defParms_composite ) );
+    PBR_Vars_t() 
+	{ 
+		memset( this, 0xFF, sizeof( *this ) );
+        bModel = false;
+	}
 
-		bModel = false;
-	};
+    int baseTexture;
+    int baseColor;
+    int normalTexture;
+    int bumpMap;
+    int envMap;
+    int baseTextureFrame;
+    int baseTextureTransform;
+    int useParallax;
+    int parallaxDepth;
+    int parallaxCenter;
+    int alphaTestReference;
+    int flashlightTexture;
+    int flashlightTextureFrame;
+    int emissionTexture;
+    int mraoTexture;
+    int useEnvAmbient;
+    int specularTexture;
 
-	// textures
-	int iAlbedo;
-	int iAlbedo2;
-	int iEnvmap;
-	int iEnvmapMask;
-	int iEnvmapMask2;
-	int iBlendmodulate;
-
-	// envmapping
-	int iEnvmapTint;
-	int iEnvmapSaturation;
-	int iEnvmapContrast;
-	int iEnvmapFresnel;
-
-	// rimlight
-	int iRimlightEnable;
-	int iRimlightExponent;
-	int iRimlightAlbedoScale;
-	int iRimlightTint;
-	int iRimlightModLight;
-
-	// alpha
-	int iAlphatestRef;
-
-	// phong
-	int iPhongScale;
-	int iPhongFresnel;
-
-	// self illum
-	int iSelfIllumTint;
-	int iSelfIllumMaskInEnvmapAlpha;
-	int iSelfIllumFresnelModulate;
-	int iSelfIllumMask;
-
-	// blendmod
-	int iBlendmodulateTransform;
-
-	int iFresnelRanges;
-
-	int iEnvmapParallax;
-	int iEnvmapOrigin;
-
-	// Tree Sway
-	int iTreeSway;
-	int iTreeSwayHeight;
-	int iTreeSwayStartHeight;
-	int iTreeSwayRadius;
-	int iTreeSwayStartRadius;
-	int iTreeSwaySpeed;
-	int iTreeSwaySpeedHighWindMultiplier;
-	int iTreeSwayStrength;
-	int iTreeSwayScrumbleSpeed;
-	int iTreeSwayScrumbleStrength;
-	int iTreeSwayScrumbleFrequency;
-	int iTreeSwayFalloffExp;
-	int iTreeSwayScrumbleFalloffExp;
-	int iTreeSwaySpeedLerpStart;
-	int iTreeSwaySpeedLerpEnd;
-
-	// config
 	bool bModel;
 };
 
-
-void InitParmsComposite( const defParms_composite &info, CBaseVSShader *pShader, IMaterialVar **params );
-void InitPassComposite( const defParms_composite &info, CBaseVSShader *pShader, IMaterialVar **params );
-void DrawPassComposite( const defParms_composite &info, CBaseVSShader *pShader, IMaterialVar **params,
-	IShaderShadow* pShaderShadow, IShaderDynamicAPI* pShaderAPI,
-	VertexCompressionType_t vertexCompression, CDeferredPerMaterialContextData *pDeferredContext );
+void InitParmsCompositePBR( const PBR_Vars_t &info, CBaseVSShader *pShader, IMaterialVar **params );
+void InitPassCompositePBR( const PBR_Vars_t &info, CBaseVSShader *pShader, IMaterialVar **params );
+void DrawPassCompositePBR( const PBR_Vars_t &info, CBaseVSShader *pShader, IMaterialVar **params,
+                        IShaderShadow *pShaderShadow, IShaderDynamicAPI *pShaderAPI,
+                        VertexCompressionType_t vertexCompression, CDeferredPerMaterialContextData *pDeferredContext );
 
 
 #endif
