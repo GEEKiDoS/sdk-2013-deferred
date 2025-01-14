@@ -4,7 +4,7 @@
 //
 //==================================================================================================
 
-//  STATIC: "LIGHTMAPPED"              "0..1"
+//  STATIC: "LIGHTMAPPED"               "0..1"
 //  DYNAMIC: "COMPRESSED_VERTS"         "0..1"
 //  DYNAMIC: "DOWATERFOG"               "0..1"
 //  DYNAMIC: "SKINNING"                 "0..1"
@@ -27,13 +27,13 @@ struct VS_INPUT
     float4 vBoneWeights             : BLENDWEIGHT;
     float4 vBoneIndices             : BLENDINDICES;
     float4 vNormal                  : NORMAL;
+	float4 vColor                   : COLOR0;
+	float3 vSpecular                : COLOR1;
     float2 vTexCoord0               : TEXCOORD0;
 #ifdef LIGHTMAPPED
     float4 vLightmapTexCoord        : TEXCOORD1;
     float4 vLightmapTexCoordOffset  : TEXCOORD2;
-#elif STATIC_LIGHT_VERTEX
-	float3 vStaticLight             : COLOR1;
-#endif // LIGHTMAPPED
+#endif
 };
 
 struct VS_OUTPUT
@@ -48,6 +48,7 @@ struct VS_OUTPUT
     float3 projPos                  : TEXCOORD3;
     float4 lightmapTexCoord0And1    : TEXCOORD4;
     float4 lightmapTexCoord2And3    : TEXCOORD5;
+	float3 staticLighting : TEXCOORD6;
 };
 
 //-----------------------------------------------------------------------------
@@ -57,21 +58,21 @@ VS_OUTPUT main( const VS_INPUT v )
 {
     VS_OUTPUT o = ( VS_OUTPUT )0;
 
-#ifdef LIGHTMAPPED
-    o.lightmapTexCoord0And1.xy = v.vLightmapTexCoord;
-    o.lightmapTexCoord0And1.zw = o.lightmapTexCoord0And1.xy + v.vLightmapTexCoordOffset;
-    o.lightmapTexCoord2And3.xy = o.lightmapTexCoord0And1.zw + v.vLightmapTexCoordOffset;
-    o.lightmapTexCoord2And3.zw = o.lightmapTexCoord2And3.xy + v.vLightmapTexCoordOffset;
-#elif STATIC_LIGHT_VERTEX
-	o.lightmapTexCoord0And1.rgb = v.vStaticLight * cOverbright;
-#endif
-
     float3 vNormal;
     DecompressVertex_Normal(v.vNormal, vNormal);
 
     float3 worldNormal, worldPos;
     SkinPositionAndNormal(g_bSkinning, v.vPos, vNormal, v.vBoneWeights, v.vBoneIndices, worldPos, worldNormal);
 
+#if LIGHTMAPPED
+    o.lightmapTexCoord0And1.xy = v.vLightmapTexCoord;
+    o.lightmapTexCoord0And1.zw = o.lightmapTexCoord0And1.xy + v.vLightmapTexCoordOffset;
+    o.lightmapTexCoord2And3.xy = o.lightmapTexCoord0And1.zw + v.vLightmapTexCoordOffset;
+    o.lightmapTexCoord2And3.zw = o.lightmapTexCoord2And3.xy + v.vLightmapTexCoordOffset;
+#elif STATIC_LIGHT_VERTEX
+    o.staticLighting.rgb = GammaToLinear(v.vSpecular);
+#endif
+    
     // Transform into projection space
     float4 vProjPos = mul(float4(worldPos, 1), cViewProj);
     o.projPosSetup = vProjPos;
@@ -83,7 +84,7 @@ VS_OUTPUT main( const VS_INPUT v )
     // Needed for water fog alpha and diffuse lighting 
     o.worldPos = worldPos;
     o.worldNormal = normalize(worldNormal);
-
+    
     // Base texture coordinate transform
     o.baseTexCoord.x = dot(v.vTexCoord0, cBaseTexCoordTransform[0].xy);
     o.baseTexCoord.y = dot(v.vTexCoord0, cBaseTexCoordTransform[1].xy);

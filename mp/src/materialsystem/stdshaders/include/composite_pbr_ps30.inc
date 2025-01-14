@@ -22,14 +22,12 @@ class composite_pbr_ps30_Static_Index
 	unsigned int m_nLIGHTMAPPED : 2;
 	unsigned int m_nUSEENVAMBIENT : 2;
 	unsigned int m_nEMISSIVE : 2;
-	unsigned int m_nSPECULAR : 2;
 	unsigned int m_nPARALLAXOCCLUSION : 2;
 	unsigned int m_nBUMPED : 2;
 #ifdef _DEBUG
 	bool m_bLIGHTMAPPED : 1;
 	bool m_bUSEENVAMBIENT : 1;
 	bool m_bEMISSIVE : 1;
-	bool m_bSPECULAR : 1;
 	bool m_bPARALLAXOCCLUSION : 1;
 	bool m_bBUMPED : 1;
 #endif	// _DEBUG
@@ -61,15 +59,6 @@ public:
 #endif	// _DEBUG
 	}
 
-	void SetSPECULAR( int i )
-	{
-		Assert( i >= 0 && i <= 1 );
-		m_nSPECULAR = i;
-#ifdef _DEBUG
-		m_bSPECULAR = true;
-#endif	// _DEBUG
-	}
-
 	void SetPARALLAXOCCLUSION( int i )
 	{
 		Assert( i >= 0 && i <= 1 );
@@ -93,14 +82,12 @@ public:
 		m_nLIGHTMAPPED = 0;
 		m_nUSEENVAMBIENT = 0;
 		m_nEMISSIVE = 0;
-		m_nSPECULAR = 0;
 		m_nPARALLAXOCCLUSION = 0;
 		m_nBUMPED = 0;
 #ifdef _DEBUG
 		m_bLIGHTMAPPED = false;
 		m_bUSEENVAMBIENT = false;
 		m_bEMISSIVE = false;
-		m_bSPECULAR = false;
 		m_bPARALLAXOCCLUSION = false;
 		m_bBUMPED = false;
 #endif	// _DEBUG
@@ -108,12 +95,12 @@ public:
 
 	int GetIndex() const
 	{
-		Assert( m_bLIGHTMAPPED && m_bUSEENVAMBIENT && m_bEMISSIVE && m_bSPECULAR && m_bPARALLAXOCCLUSION && m_bBUMPED );
-		return ( 32 * m_nLIGHTMAPPED ) + ( 64 * m_nUSEENVAMBIENT ) + ( 128 * m_nEMISSIVE ) + ( 256 * m_nSPECULAR ) + ( 512 * m_nPARALLAXOCCLUSION ) + ( 1024 * m_nBUMPED ) + 0;
+		Assert( m_bLIGHTMAPPED && m_bUSEENVAMBIENT && m_bEMISSIVE && m_bPARALLAXOCCLUSION && m_bBUMPED );
+		return ( 64 * m_nLIGHTMAPPED ) + ( 128 * m_nUSEENVAMBIENT ) + ( 256 * m_nEMISSIVE ) + ( 512 * m_nPARALLAXOCCLUSION ) + ( 1024 * m_nBUMPED ) + 0;
 	}
 };
 
-#define shaderStaticTest_composite_pbr_ps30 psh_forgot_to_set_static_LIGHTMAPPED + psh_forgot_to_set_static_USEENVAMBIENT + psh_forgot_to_set_static_EMISSIVE + psh_forgot_to_set_static_SPECULAR + psh_forgot_to_set_static_PARALLAXOCCLUSION + psh_forgot_to_set_static_BUMPED
+#define shaderStaticTest_composite_pbr_ps30 psh_forgot_to_set_static_LIGHTMAPPED + psh_forgot_to_set_static_USEENVAMBIENT + psh_forgot_to_set_static_EMISSIVE + psh_forgot_to_set_static_PARALLAXOCCLUSION + psh_forgot_to_set_static_BUMPED
 
 
 class composite_pbr_ps30_Dynamic_Index
@@ -121,14 +108,16 @@ class composite_pbr_ps30_Dynamic_Index
 	unsigned int m_nWRITEWATERFOGTODESTALPHA : 2;
 	unsigned int m_nPIXELFOGTYPE : 2;
 	unsigned int m_nWRITE_DEPTH_TO_DESTALPHA : 2;
-	unsigned int m_nSTATIC_LIGHT_VERTEX : 2;
 	unsigned int m_nSTATIC_LIGHT_LIGHTMAP : 2;
+	unsigned int m_nSTATIC_LIGHT_VERTEX : 2;
+	unsigned int m_nENABLE_SPECULAR : 2;
 #ifdef _DEBUG
 	bool m_bWRITEWATERFOGTODESTALPHA : 1;
 	bool m_bPIXELFOGTYPE : 1;
 	bool m_bWRITE_DEPTH_TO_DESTALPHA : 1;
-	bool m_bSTATIC_LIGHT_VERTEX : 1;
 	bool m_bSTATIC_LIGHT_LIGHTMAP : 1;
+	bool m_bSTATIC_LIGHT_VERTEX : 1;
+	bool m_bENABLE_SPECULAR : 1;
 #endif	// _DEBUG
 public:
 	void SetWRITEWATERFOGTODESTALPHA( int i )
@@ -158,15 +147,6 @@ public:
 #endif	// _DEBUG
 	}
 
-	void SetSTATIC_LIGHT_VERTEX( int i )
-	{
-		Assert( i >= 0 && i <= 1 );
-		m_nSTATIC_LIGHT_VERTEX = i;
-#ifdef _DEBUG
-		m_bSTATIC_LIGHT_VERTEX = true;
-#endif	// _DEBUG
-	}
-
 	void SetSTATIC_LIGHT_LIGHTMAP( int i )
 	{
 		Assert( i >= 0 && i <= 1 );
@@ -176,31 +156,51 @@ public:
 #endif	// _DEBUG
 	}
 
+	void SetSTATIC_LIGHT_VERTEX( int i )
+	{
+		Assert( i >= 0 && i <= 1 );
+		m_nSTATIC_LIGHT_VERTEX = i;
+#ifdef _DEBUG
+		m_bSTATIC_LIGHT_VERTEX = true;
+#endif	// _DEBUG
+	}
+
+	void SetENABLE_SPECULAR( int i )
+	{
+		Assert( i >= 0 && i <= 1 );
+		m_nENABLE_SPECULAR = i;
+#ifdef _DEBUG
+		m_bENABLE_SPECULAR = true;
+#endif	// _DEBUG
+	}
+
 	composite_pbr_ps30_Dynamic_Index( IShaderDynamicAPI* pShaderAPI )
 	{
 		m_nWRITEWATERFOGTODESTALPHA = 0;
 		m_nPIXELFOGTYPE = 0;
 		m_nWRITE_DEPTH_TO_DESTALPHA = 0;
-		m_nSTATIC_LIGHT_VERTEX = 0;
 		m_nSTATIC_LIGHT_LIGHTMAP = 0;
+		m_nSTATIC_LIGHT_VERTEX = 0;
+		m_nENABLE_SPECULAR = 0;
 #ifdef _DEBUG
 		m_bWRITEWATERFOGTODESTALPHA = false;
 		m_bPIXELFOGTYPE = false;
 		m_bWRITE_DEPTH_TO_DESTALPHA = false;
-		m_bSTATIC_LIGHT_VERTEX = false;
 		m_bSTATIC_LIGHT_LIGHTMAP = false;
+		m_bSTATIC_LIGHT_VERTEX = false;
+		m_bENABLE_SPECULAR = false;
 #endif	// _DEBUG
 	}
 
 	int GetIndex() const
 	{
-		Assert( m_bWRITEWATERFOGTODESTALPHA && m_bPIXELFOGTYPE && m_bWRITE_DEPTH_TO_DESTALPHA && m_bSTATIC_LIGHT_VERTEX && m_bSTATIC_LIGHT_LIGHTMAP );
+		Assert( m_bWRITEWATERFOGTODESTALPHA && m_bPIXELFOGTYPE && m_bWRITE_DEPTH_TO_DESTALPHA && m_bSTATIC_LIGHT_LIGHTMAP && m_bSTATIC_LIGHT_VERTEX && m_bENABLE_SPECULAR );
 		AssertMsg( !( ( m_nPIXELFOGTYPE == 0 ) && ( m_nWRITEWATERFOGTODESTALPHA != 0 ) ), "Invalid combo combination ( ( PIXELFOGTYPE == 0 ) && ( WRITEWATERFOGTODESTALPHA != 0 ) )" );
 		AssertMsg( !( 1 && ( 1 && ( ( m_nPIXELFOGTYPE != 1 ) && m_nWRITEWATERFOGTODESTALPHA ) ) ), "Invalid combo combination ( 1 && ( 1 && ( ( PIXELFOGTYPE != 1 ) && WRITEWATERFOGTODESTALPHA ) ) )" );
 		AssertMsg( !( 1 && ( 1 && ( ( m_nPIXELFOGTYPE != 1 ) && m_nWRITEWATERFOGTODESTALPHA ) ) ), "Invalid combo combination ( 1 && ( 1 && ( ( PIXELFOGTYPE != 1 ) && WRITEWATERFOGTODESTALPHA ) ) )" );
-		return ( 1 * m_nWRITEWATERFOGTODESTALPHA ) + ( 2 * m_nPIXELFOGTYPE ) + ( 4 * m_nWRITE_DEPTH_TO_DESTALPHA ) + ( 8 * m_nSTATIC_LIGHT_VERTEX ) + ( 16 * m_nSTATIC_LIGHT_LIGHTMAP ) + 0;
+		return ( 1 * m_nWRITEWATERFOGTODESTALPHA ) + ( 2 * m_nPIXELFOGTYPE ) + ( 4 * m_nWRITE_DEPTH_TO_DESTALPHA ) + ( 8 * m_nSTATIC_LIGHT_LIGHTMAP ) + ( 16 * m_nSTATIC_LIGHT_VERTEX ) + ( 32 * m_nENABLE_SPECULAR ) + 0;
 	}
 };
 
-#define shaderDynamicTest_composite_pbr_ps30 psh_forgot_to_set_dynamic_WRITEWATERFOGTODESTALPHA + psh_forgot_to_set_dynamic_PIXELFOGTYPE + psh_forgot_to_set_dynamic_WRITE_DEPTH_TO_DESTALPHA + psh_forgot_to_set_dynamic_STATIC_LIGHT_VERTEX + psh_forgot_to_set_dynamic_STATIC_LIGHT_LIGHTMAP
+#define shaderDynamicTest_composite_pbr_ps30 psh_forgot_to_set_dynamic_WRITEWATERFOGTODESTALPHA + psh_forgot_to_set_dynamic_PIXELFOGTYPE + psh_forgot_to_set_dynamic_WRITE_DEPTH_TO_DESTALPHA + psh_forgot_to_set_dynamic_STATIC_LIGHT_LIGHTMAP + psh_forgot_to_set_dynamic_STATIC_LIGHT_VERTEX + psh_forgot_to_set_dynamic_ENABLE_SPECULAR
 

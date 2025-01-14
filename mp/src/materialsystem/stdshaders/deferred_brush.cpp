@@ -148,6 +148,12 @@ BEGIN_VS_SHADER( DEFERRED_BRUSH, "" )
 
 	SHADER_INIT
 	{
+        if ( stricmp( params[ENVMAP]->GetStringValue(), "env_cubemap" ) == 0 )
+        {
+            Warning( "env_cubemap used on world geometry without rebuilding map. . ignoring: %s\n", pMaterialName );
+            params[ENVMAP]->SetUndefined();
+        }
+
 		const bool bDrawToGBuffer = DrawToGBuffer( params );
 
 		if ( bDrawToGBuffer )
@@ -168,16 +174,11 @@ BEGIN_VS_SHADER( DEFERRED_BRUSH, "" )
 
 	SHADER_FALLBACK
 	{
-		/*if ( !GetDeferredExt()->IsDeferredLightingEnabled() )
-			return "LightmappedGeneric";
+        const bool bIsDecal = IS_FLAG_SET( MATERIAL_VAR_DECAL );
 
-		const bool bTranslucent = IS_FLAG_SET( MATERIAL_VAR_TRANSLUCENT );
-		const bool bIsDecal = IS_FLAG_SET( MATERIAL_VAR_DECAL );
+        if ( bIsDecal ) return "DEFERRED_DECALMODULATE";
 
-		if ( bTranslucent && !bIsDecal )
-			return "LightmappedGeneric";*/
-
-		return 0;
+		 return nullptr;
 	}
 
 	SHADER_DRAW

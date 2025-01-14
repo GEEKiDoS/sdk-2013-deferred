@@ -1,0 +1,8 @@
+"patch"
+{
+	"include"		"materials/TILE/TILEFLOOR013A.vmt"
+	"replace"
+	{
+		"$envmap"		"maps/d1_trainstation_02/c-3063_-846_449"
+	}
+}

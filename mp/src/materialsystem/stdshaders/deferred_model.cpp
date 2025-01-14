@@ -14,6 +14,7 @@ SHADER_PARAM( EMISSIONTEXTURE, SHADER_PARAM_TYPE_TEXTURE, "", "Emission texture"
 SHADER_PARAM( SPECULARTEXTURE, SHADER_PARAM_TYPE_TEXTURE, "", "Specular F0 RGB map" );
 
 SHADER_PARAM( BUMPMAP, SHADER_PARAM_TYPE_TEXTURE, "", "" )
+SHADER_PARAM( NORMALMAP, SHADER_PARAM_TYPE_TEXTURE, "", "" )
 
 SHADER_PARAM( LITFACE, SHADER_PARAM_TYPE_BOOL, "0", "" )
 
@@ -127,8 +128,9 @@ void SetupParmsComposite( PBR_Vars_t &p )
 {
     p.bModel = true;
 
+    p.baseTexture = BASETEXTURE;
     p.baseColor = COLOR;
-    p.bumpMap = BUMPMAP;
+    p.bumpMap = NORMALMAP;
     p.baseTextureFrame = FRAME;
     p.baseTextureTransform = BASETEXTURETRANSFORM;
     p.alphaTestReference = ALPHATESTREFERENCE;
@@ -161,6 +163,12 @@ SHADER_INIT_PARAMS()
     SET_FLAGS2( MATERIAL_VAR2_SUPPORTS_HW_SKINNING );
 
     if ( g_pHardwareConfig->HasFastVertexTextures() ) SET_FLAGS2( MATERIAL_VAR2_USES_VERTEXID );
+
+    if (params[BUMPMAP]->IsDefined())
+    {
+        params[NORMALMAP]->SetStringValue( params[BUMPMAP]->GetStringValue() );
+        params[BUMPMAP]->SetUndefined();
+    }
 
     const bool bDrawToGBuffer = DrawToGBuffer( params );
 
@@ -202,16 +210,11 @@ SHADER_INIT
 
 SHADER_FALLBACK
 {
-    /*if ( !GetDeferredExt()->IsDeferredLightingEnabled() )
-        return "VertexlitGeneric";
-
-    const bool bTranslucent = IS_FLAG_SET( MATERIAL_VAR_TRANSLUCENT );
     const bool bIsDecal = IS_FLAG_SET( MATERIAL_VAR_DECAL );
 
-    if ( bTranslucent && !bIsDecal )
-        return "VertexlitGeneric";*/
+    if ( bIsDecal ) return "DEFERRED_DECALMODULATE";
 
-    return 0;
+    return nullptr;
 }
 
 SHADER_DRAW

@@ -22,10 +22,10 @@ static ConVar mat_pbr_parallaxmap( "mat_pbr_parallaxmap", "1" );
 void InitParmsCompositePBR( const PBR_Vars_t &info, CBaseVSShader *pShader, IMaterialVar **params )
 {
     // Set a good default mrao texture
-    if ( !params[info.mraoTexture]->IsDefined() ) params[info.mraoTexture]->SetStringValue( "dev/pbr_mraotexture" );
+    // if ( !params[info.mraoTexture]->IsDefined() ) params[info.mraoTexture]->SetStringValue( "dev/pbr_mraotexture" );
 
     // PBR relies heavily on envmaps
-    if ( !params[info.envMap]->IsDefined() ) params[info.envMap]->SetStringValue( "env_cubemap" );
+    // if ( !params[info.envMap]->IsDefined() ) params[info.envMap]->SetStringValue( "env_cubemap" );
 
     // Check if the hardware supports flashlight border color
     if ( g_pHardwareConfig->SupportsBorderColor() )
@@ -82,21 +82,22 @@ void DrawPassCompositePBR( const PBR_Vars_t &info, CBaseVSShader *pShader, IMate
                            CDeferredPerMaterialContextData *pDeferredContext )
 {
     // Setting up booleans
-    bool bModel = info.bModel;
-    bool bHasBaseTexture = ( info.baseTexture != -1 ) && params[info.baseTexture]->IsTexture();
-    bool bHasNormalTexture = ( info.bumpMap != -1 ) && params[info.bumpMap]->IsTexture();
-    bool bHasMraoTexture = ( info.mraoTexture != -1 ) && params[info.mraoTexture]->IsTexture();
-    bool bHasEmissionTexture = ( info.emissionTexture != -1 ) && params[info.emissionTexture]->IsTexture();
-    bool bHasEnvTexture = ( info.envMap != -1 ) && params[info.envMap]->IsTexture();
-    bool bIsAlphaTested = IS_FLAG_SET( MATERIAL_VAR_ALPHATEST ) != 0;
-    bool bHasColor = ( info.baseColor != -1 ) && params[info.baseColor]->IsDefined();
-    bool bLightMapped = !info.bModel;
-    bool bUseEnvAmbient = ( info.useEnvAmbient != -1 ) && ( params[info.useEnvAmbient]->GetIntValue() == 1 );
-    bool bHasSpecularTexture = ( info.specularTexture != -1 ) && params[info.specularTexture]->IsTexture();
+    const bool bModel = info.bModel;
+    const bool bHasBaseTexture = ( info.baseTexture != -1 ) && params[info.baseTexture]->IsTexture();
+    const bool bHasNormalTexture = ( info.bumpMap != -1 ) && params[info.bumpMap]->IsTexture();
+    const bool bHasMraoTexture = ( info.mraoTexture != -1 ) && params[info.mraoTexture]->IsTexture();
+    const bool bHasEmissionTexture = ( info.emissionTexture != -1 ) && params[info.emissionTexture]->IsTexture();
+    const bool bHasEnvTexture = ( info.envMap != -1 ) && params[info.envMap]->IsTexture();
+    const bool bIsAlphaTested = IS_FLAG_SET( MATERIAL_VAR_ALPHATEST ) != 0;
+    const bool bHasColor = ( info.baseColor != -1 ) && params[info.baseColor]->IsDefined();
+    const bool bLightMapped = !info.bModel;
+    const bool bUseEnvAmbient = ( info.useEnvAmbient != -1 ) && ( params[info.useEnvAmbient]->GetIntValue() == 1 );
+    const bool bSpecular = !mat_specular.GetBool();
+    const bool bTranslucent = IS_FLAG_SET( MATERIAL_VAR_TRANSLUCENT );
 
     // Determining whether we're dealing with a fully opaque material
     BlendType_t nBlendType = pShader->EvaluateBlendRequirements( info.baseTexture, true );
-    bool bFullyOpaque = ( nBlendType != BT_BLENDADD ) && ( nBlendType != BT_BLEND ) && !bIsAlphaTested;
+    bool bFullyOpaque = ( nBlendType != BT_BLENDADD ) && ( nBlendType != BT_BLEND ) && !bIsAlphaTested && !bTranslucent;
 
     if ( pShader->IsSnapshotting() )
     {
@@ -142,6 +143,7 @@ void DrawPassCompositePBR( const PBR_Vars_t &info, CBaseVSShader *pShader, IMate
         if ( bModel )
         {
             // We only need the position and surface normal
+            // and... static prop lighting
             unsigned int flags = VERTEX_POSITION | VERTEX_NORMAL | VERTEX_FORMAT_COMPRESSED;
             // We need three texcoords, all in the default float2 size
             pShaderShadow->VertexShaderVertexFormat( flags, 1, 0, 0 );
@@ -162,16 +164,15 @@ void DrawPassCompositePBR( const PBR_Vars_t &info, CBaseVSShader *pShader, IMate
 
         // Setting up static vertex shader
         DECLARE_STATIC_VERTEX_SHADER( composite_pbr_vs30 );
-        SET_STATIC_VERTEX_SHADER_COMBO( LIGHTMAPPED, bLightMapped );
+        SET_STATIC_VERTEX_SHADER_COMBO( LIGHTMAPPED, bLightMapped ? 1 : 0 );
         SET_STATIC_VERTEX_SHADER( composite_pbr_vs30 );
 
         // Setting up static pixel shader
         DECLARE_STATIC_PIXEL_SHADER( composite_pbr_ps30 );
-        SET_STATIC_PIXEL_SHADER_COMBO( LIGHTMAPPED, bLightMapped );
+        SET_STATIC_PIXEL_SHADER_COMBO( LIGHTMAPPED, bLightMapped ? 1 : 0 );
         SET_STATIC_PIXEL_SHADER_COMBO( BUMPED, bHasNormalTexture );
         SET_STATIC_PIXEL_SHADER_COMBO( USEENVAMBIENT, bUseEnvAmbient );
         SET_STATIC_PIXEL_SHADER_COMBO( EMISSIVE, bHasEmissionTexture );
-        SET_STATIC_PIXEL_SHADER_COMBO( SPECULAR, bHasSpecularTexture );
         SET_STATIC_PIXEL_SHADER_COMBO( PARALLAXOCCLUSION, useParallax );
         SET_STATIC_PIXEL_SHADER( composite_pbr_ps30 );
 
@@ -233,7 +234,7 @@ void DrawPassCompositePBR( const PBR_Vars_t &info, CBaseVSShader *pShader, IMate
         }
 
         // Setting up normal map
-        if (bHasNormalTexture)
+        if ( bHasNormalTexture )
         {
             pShader->BindTexture( SAMPLER_NORMAL, info.bumpMap );
         }
@@ -252,14 +253,7 @@ void DrawPassCompositePBR( const PBR_Vars_t &info, CBaseVSShader *pShader, IMate
             pShaderAPI->BindStandardTexture( SAMPLER_MRAO, TEXTURE_WHITE );
         }
 
-        if ( bHasSpecularTexture )
-        {
-            pShader->BindTexture( SAMPLER_SPECULAR, info.specularTexture, 0 );
-        }
-        else
-        {
-            pShaderAPI->BindStandardTexture( SAMPLER_SPECULAR, TEXTURE_BLACK );
-        }
+        pShader->BindTexture( SAMPLER_SPECULAR, GetDeferredExt()->GetTexture_SpecularRoughness() );
 
         // Getting fog info
         MaterialFogMode_t fogType = pShaderAPI->GetSceneFogMode();
@@ -306,7 +300,8 @@ void DrawPassCompositePBR( const PBR_Vars_t &info, CBaseVSShader *pShader, IMate
         pShaderAPI->SetPixelShaderConstant( 2, vEyePos_SpecExponent, 1 );
 
         // Setting lightmap texture
-        pShaderAPI->BindStandardTexture( SAMPLER_LIGHTMAP, TEXTURE_LIGHTMAP_BUMPED );
+        if ( bLightMapped || lightState.m_bStaticLightTexel )
+            pShaderAPI->BindStandardTexture( SAMPLER_LIGHTMAP, TEXTURE_LIGHTMAP );
 
         // Setting light accum texture
         pShader->BindTexture( SAMPLER_LIGHTACCUM, GetDeferredExt()->GetTexture_LightAccum() );
@@ -318,7 +313,7 @@ void DrawPassCompositePBR( const PBR_Vars_t &info, CBaseVSShader *pShader, IMate
         SET_DYNAMIC_VERTEX_SHADER_COMBO(
             LIGHTING_PREVIEW, pShaderAPI->GetIntRenderingParameter( INT_RENDERPARM_ENABLE_FIXED_LIGHTING ) != 0 );
         SET_DYNAMIC_VERTEX_SHADER_COMBO( COMPRESSED_VERTS, (int) vertexCompression );
-        SET_DYNAMIC_VERTEX_SHADER_COMBO( STATIC_LIGHT_VERTEX, lightState.m_bStaticLightVertex );
+        SET_DYNAMIC_VERTEX_SHADER_COMBO( STATIC_LIGHT_VERTEX, lightState.m_bStaticLightVertex ? 1 : 0 );
         SET_DYNAMIC_VERTEX_SHADER( composite_pbr_vs30 );
 
         // Setting up dynamic pixel shader
@@ -326,8 +321,9 @@ void DrawPassCompositePBR( const PBR_Vars_t &info, CBaseVSShader *pShader, IMate
         SET_DYNAMIC_PIXEL_SHADER_COMBO( WRITEWATERFOGTODESTALPHA, bWriteWaterFogToAlpha );
         SET_DYNAMIC_PIXEL_SHADER_COMBO( WRITE_DEPTH_TO_DESTALPHA, bWriteDepthToAlpha );
         SET_DYNAMIC_PIXEL_SHADER_COMBO( PIXELFOGTYPE, pShaderAPI->GetPixelFogCombo() );
-        SET_DYNAMIC_PIXEL_SHADER_COMBO( STATIC_LIGHT_VERTEX, lightState.m_bStaticLightVertex );
         SET_DYNAMIC_PIXEL_SHADER_COMBO( STATIC_LIGHT_LIGHTMAP, lightState.m_bStaticLightTexel );
+        SET_DYNAMIC_PIXEL_SHADER_COMBO( STATIC_LIGHT_VERTEX, lightState.m_bStaticLightVertex ? 1 : 0 );
+        SET_DYNAMIC_PIXEL_SHADER_COMBO( ENABLE_SPECULAR, bSpecular );
         SET_DYNAMIC_PIXEL_SHADER( composite_pbr_ps30 );
 
         // Setting up base texture transform
@@ -336,9 +332,15 @@ void DrawPassCompositePBR( const PBR_Vars_t &info, CBaseVSShader *pShader, IMate
         // This is probably important
         pShader->SetModulationPixelShaderDynamicState_LinearColorSpace( 1 );
 
-        // Send ambient cube to the pixel shader, force to black if not available
-        // cAmbientCube
-        pShaderAPI->SetPixelShaderStateAmbientLightCube( 8, bLightMapped );
+        if ( bModel )
+        {
+            // cAmbientCubeXYZ in vs
+            pShader->SetAmbientCubeDynamicStateVertexShader();
+
+            // Send ambient cube to the pixel shader, force to black if not available
+            // cAmbientCube
+            pShaderAPI->SetPixelShaderStateAmbientLightCube( 8, false );
+        }
 
         // Handle mat_fullbright 2 (diffuse lighting only)
         if ( bLightingOnly )
@@ -347,7 +349,7 @@ void DrawPassCompositePBR( const PBR_Vars_t &info, CBaseVSShader *pShader, IMate
         }
 
         // Handle mat_specular 0 (no envmap reflections)
-        if ( !mat_specular.GetBool() )
+        if ( bSpecular )
         {
             pShaderAPI->BindStandardTexture( SAMPLER_ENVMAP, TEXTURE_BLACK );  // Envmap
         }

@@ -77,7 +77,7 @@ PS_OUTPUT main(const PS_INPUT In)
 #endif
 	
 	// write direct sunlight in alpha
-	Out.vColor_0 = WriteLighting(float4(0, 0, 0, directLighting.x));
+	Out.vColor_0 = WriteLighting(float4(0, 0, 0, dot(directLighting.xyz, 0.3333.xxx)));
 
 	return Out;
 }

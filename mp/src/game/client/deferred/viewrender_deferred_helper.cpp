@@ -374,6 +374,10 @@ public:
 
         LightmapHook::Init( reinterpret_cast<uint8_t*>( engineDll ) );
 
+        // Force All Mips
+        auto* materialsystemDll = reinterpret_cast<uint8_t*>(Sys_LoadModule( "materialsystem" DLL_EXT_STRING ));
+        Memory::Set<uint8_t>( materialsystemDll + 0x133868, 1 );
+
         // g_WorldStaticMeshes = reinterpret_cast<CUtlVector<IMesh*>*>(reinterpret_cast<byte*>( engineDll ) + 0x5AD2A8);
 
         return true;
