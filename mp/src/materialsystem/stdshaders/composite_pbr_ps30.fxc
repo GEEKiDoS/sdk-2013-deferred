@@ -8,14 +8,21 @@
 // STATIC: "USEENVAMBIENT"              "0..1"
 // STATIC: "EMISSIVE"                   "0..1"
 // STATIC: "SPECULAR"                   "0..1"
-// STATIC:  "PARALLAXOCCLUSION"         "0..1"
+// STATIC: "PARALLAXOCCLUSION"			"0..1"
+// STATIC: "BUMPED"						"0..1"
 
 // DYNAMIC: "WRITEWATERFOGTODESTALPHA"  "0..1"
 // DYNAMIC: "PIXELFOGTYPE"              "0..1"
 // DYNAMIC: "WRITE_DEPTH_TO_DESTALPHA"  "0..1"
+// DYNAMIC: "STATIC_LIGHT_VERTEX"		"0..1"
+// DYNAMIC: "STATIC_LIGHT_LIGHTMAP"		"0..1"
 
 // Can't write fog to alpha if there is no fog
 // SKIP: ($PIXELFOGTYPE == 0) && ($WRITEWATERFOGTODESTALPHA != 0)
+
+#if defined(__INTELLISENSE__)
+#define LIGHTMAPPED 1
+#endif
 
 #include "common_ps_fxc.h"
 #include "common_lightmappedgeneric_fxc.h"
@@ -67,8 +74,8 @@ struct PS_INPUT
 	float3 worldNormal : TEXCOORD1;
 	float3 worldPos : TEXCOORD2;
 	float3 projPos : TEXCOORD3;
-	float4 lightmapTexCoord1And2 : TEXCOORD4;
-	float4 lightmapTexCoord3 : TEXCOORD5;
+	float4 lightmapTexCoord0And1 : TEXCOORD4;
+	float4 lightmapTexCoord2And3 : TEXCOORD5;
 	float2 screenPos : VPOS;
 };
 
@@ -129,11 +136,41 @@ float4 main(PS_INPUT i) : COLOR
 
     // Start ambient
 	float3 ambientLighting = 0.0;
-	float sunAmount = 0.0;
-	float4 lookupResult = ambientLookup(normal, EnvAmbientCube, textureNormal, i.lightmapTexCoord1And2, i.lightmapTexCoord3, LightmapSampler, g_DiffuseModulation);
-	float3 diffuseIrradiance = lookupResult.rgb;
-	sunAmount = lookupResult.a;
-        // return float4(diffuseIrradiance, 1); // testing diffuse irraciance
+	
+#if LIGHTMAPPED
+	#if BUMPED
+		float4 lightmap1 = tex2D(LightmapSampler, i.lightmapTexCoord0And1.zw);
+		float4 lightmap2 = tex2D(LightmapSampler, i.lightmapTexCoord2And3.xy);
+		float4 lightmap3 = tex2D(LightmapSampler, i.lightmapTexCoord2And3.zw);
+	
+		float3 diffuseIrradiance = (
+			lightmap1.rgb * textureNormal.x +    
+			lightmap2.rgb * textureNormal.y +    
+			lightmap3.rgb * textureNormal.z  
+		) * g_DiffuseModulation.rgb;
+	
+		float sunAmount = (
+			lightmap1.a * textureNormal.x +
+			lightmap2.a * textureNormal.y +
+			lightmap3.a * textureNormal.z  
+		);
+	#else
+		float4 lightmap = tex2D(LightmapSampler, i.lightmapTexCoord0And1.xy);
+		float3 diffuseIrradiance = lightmap.rgb * g_DiffuseModulation.rgb;
+		float sunAmount = lightmap.a;
+	#endif
+#else
+	#if STATIC_LIGHT_VERTEX
+		float3 diffuseIrradiance = i.lightmapTexCoord0And1.rgb;
+	#elif STATIC_LIGHT_LIGHTMAP
+		float3 diffuseIrradiance = tex2D(LightmapSampler, i.baseTexCoord);
+	#else
+		float3 diffuseIrradiance = PixelShaderAmbientLight(normal, EnvAmbientCube);
+	#endif
+	float sunAmount = 1.0;
+#endif
+	
+    return float4(diffuseIrradiance, 1); // testing diffuse irraciance
 	float3 ambientLightingFresnelTerm = fresnelSchlickRoughness(fresnelReflectance, lightDirectionAngle, roughness); // F
 #if SPECULAR
         float3 diffuseContributionFactor = 1 - ambientLightingFresnelTerm; // kd

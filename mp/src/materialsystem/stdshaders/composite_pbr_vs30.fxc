@@ -4,10 +4,12 @@
 //
 //==================================================================================================
 
+//  STATIC: "LIGHTMAPPED"              "0..1"
 //  DYNAMIC: "COMPRESSED_VERTS"         "0..1"
 //  DYNAMIC: "DOWATERFOG"               "0..1"
 //  DYNAMIC: "SKINNING"                 "0..1"
 //  DYNAMIC: "LIGHTING_PREVIEW"         "0..1"
+//	DYNAMIC: "STATIC_LIGHT_VERTEX"		"0..1"
 
 #include "common_vs_fxc.h"
 
@@ -26,8 +28,12 @@ struct VS_INPUT
     float4 vBoneIndices             : BLENDINDICES;
     float4 vNormal                  : NORMAL;
     float2 vTexCoord0               : TEXCOORD0;
+#ifdef LIGHTMAPPED
     float4 vLightmapTexCoord        : TEXCOORD1;
     float4 vLightmapTexCoordOffset  : TEXCOORD2;
+#elif STATIC_LIGHT_VERTEX
+	float3 vStaticLight             : COLOR1;
+#endif // LIGHTMAPPED
 };
 
 struct VS_OUTPUT
@@ -40,8 +46,8 @@ struct VS_OUTPUT
     float3 worldNormal              : TEXCOORD1;
     float3 worldPos                 : TEXCOORD2;
     float3 projPos                  : TEXCOORD3;
-    float4 lightmapTexCoord1And2    : TEXCOORD4;
-    float4 lightmapTexCoord3        : TEXCOORD5;
+    float4 lightmapTexCoord0And1    : TEXCOORD4;
+    float4 lightmapTexCoord2And3    : TEXCOORD5;
 };
 
 //-----------------------------------------------------------------------------
@@ -51,18 +57,14 @@ VS_OUTPUT main( const VS_INPUT v )
 {
     VS_OUTPUT o = ( VS_OUTPUT )0;
 
-    o.lightmapTexCoord3.z = dot(v.vTexCoord0, cBaseTexCoordTransform[0]) + cBaseTexCoordTransform[0].w;
-    o.lightmapTexCoord3.w = dot(v.vTexCoord0, cBaseTexCoordTransform[1]) + cBaseTexCoordTransform[1].w;
-    o.lightmapTexCoord1And2.xy = v.vLightmapTexCoord + v.vLightmapTexCoordOffset;
-
-    float2 lightmapTexCoord2 = o.lightmapTexCoord1And2.xy + v.vLightmapTexCoordOffset;
-    float2 lightmapTexCoord3 = lightmapTexCoord2 + v.vLightmapTexCoordOffset;
-
-    // Reversed component order
-    o.lightmapTexCoord1And2.w = lightmapTexCoord2.x;
-    o.lightmapTexCoord1And2.z = lightmapTexCoord2.y;
-
-    o.lightmapTexCoord3.xy = lightmapTexCoord3;
+#ifdef LIGHTMAPPED
+    o.lightmapTexCoord0And1.xy = v.vLightmapTexCoord;
+    o.lightmapTexCoord0And1.zw = o.lightmapTexCoord0And1.xy + v.vLightmapTexCoordOffset;
+    o.lightmapTexCoord2And3.xy = o.lightmapTexCoord0And1.zw + v.vLightmapTexCoordOffset;
+    o.lightmapTexCoord2And3.zw = o.lightmapTexCoord2And3.xy + v.vLightmapTexCoordOffset;
+#elif STATIC_LIGHT_VERTEX
+	o.lightmapTexCoord0And1.rgb = v.vStaticLight * cOverbright;
+#endif
 
     float3 vNormal;
     DecompressVertex_Normal(v.vNormal, vNormal);
@@ -83,8 +85,8 @@ VS_OUTPUT main( const VS_INPUT v )
     o.worldNormal = normalize(worldNormal);
 
     // Base texture coordinate transform
-    o.baseTexCoord.x = dot(v.vTexCoord0, cBaseTexCoordTransform[0]);
-    o.baseTexCoord.y = dot(v.vTexCoord0, cBaseTexCoordTransform[1]);
+    o.baseTexCoord.x = dot(v.vTexCoord0, cBaseTexCoordTransform[0].xy);
+    o.baseTexCoord.y = dot(v.vTexCoord0, cBaseTexCoordTransform[1].xy);
 
     return o;
 }
