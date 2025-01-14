@@ -64,7 +64,7 @@ PS_OUTPUT main(const PS_INPUT In)
 	float lightDirectionAngle = max(0, dot(normal, outgoingLightDirection)); // cosLo
 
 	float3 LightIn = g_vecLightVec_Forward;
-	float3 LightColor = g_light_diffuse;
+	float3 LightColor = float3(1.0, 1.0, 1.0);
 	
 	float viewFwdDot = dot(g_vecLightVec_Forward.xyz, normal);
 	
@@ -76,10 +76,8 @@ PS_OUTPUT main(const PS_INPUT In)
 									g_vecFilterConfig_A, g_vecFilterConfig_B, normal, viewFwdDot);
 #endif
 	
-	float lightLuma = dot(directLighting, float3(0.299, 0.587, 0.114));
-	
 	// write direct sunlight in alpha
-	Out.vColor_0 = WriteLighting(float4(0, 0, 0, lightLuma));
+	Out.vColor_0 = WriteLighting(float4(0, 0, 0, directLighting.x));
 
 	return Out;
 }

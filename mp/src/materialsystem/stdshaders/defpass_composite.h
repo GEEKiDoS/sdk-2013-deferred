@@ -14,7 +14,6 @@ struct PBR_Vars_t
 
     int baseTexture;
     int baseColor;
-    int normalTexture;
     int bumpMap;
     int envMap;
     int baseTextureFrame;

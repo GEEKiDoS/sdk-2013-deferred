@@ -11,6 +11,11 @@ BEGIN_VS_SHADER( DEFERRED_BRUSH, "" )
 		SHADER_PARAM(MRAOTEXTURE, SHADER_PARAM_TYPE_TEXTURE, "", "Texture with metalness in R, roughness in G, ambient occlusion in B.");
         SHADER_PARAM(EMISSIONTEXTURE, SHADER_PARAM_TYPE_TEXTURE, "", "Emission texture");
 		SHADER_PARAM(SPECULARTEXTURE, SHADER_PARAM_TYPE_TEXTURE, "", "Specular F0 RGB map");
+        SHADER_PARAM( USEENVAMBIENT, SHADER_PARAM_TYPE_BOOL, "0", "Use the cubemaps to compute ambient light." )
+
+		SHADER_PARAM( PARALLAX, SHADER_PARAM_TYPE_BOOL, "0", "Use Parallax Occlusion Mapping." );
+        SHADER_PARAM( PARALLAXDEPTH, SHADER_PARAM_TYPE_FLOAT, "0.0030", "Depth of the Parallax Map" );
+        SHADER_PARAM( PARALLAXCENTER, SHADER_PARAM_TYPE_FLOAT, "0.5", "Center depth of the Parallax Map" );
 
 		SHADER_PARAM( BUMPMAP, SHADER_PARAM_TYPE_TEXTURE, "", "" )
 		SHADER_PARAM( SSBUMP, SHADER_PARAM_TYPE_BOOL, "", "" )
@@ -84,13 +89,23 @@ BEGIN_VS_SHADER( DEFERRED_BRUSH, "" )
 	void SetupParmsComposite( PBR_Vars_t &p )
 	{
 		p.bModel = false;
-		p.baseColor = BASETEXTURE;
-        p.mraoTexture = MRAOTEXTURE;
-        p.specularTexture = SPECULARTEXTURE;
-        p.emissionTexture = EMISSIONTEXTURE;
 
-		p.emissionTexture = ENVMAP;
-		
+        p.baseTexture = BASETEXTURE;
+        p.baseColor = COLOR;
+        p.bumpMap = BUMPMAP;
+        p.baseTextureFrame = FRAME;
+        p.baseTextureTransform = BASETEXTURETRANSFORM;
+        p.alphaTestReference = ALPHATESTREFERENCE;
+        p.flashlightTexture = FLASHLIGHTTEXTURE;
+        p.flashlightTextureFrame = FLASHLIGHTTEXTUREFRAME;
+        p.envMap = ENVMAP;
+        p.emissionTexture = EMISSIONTEXTURE;
+        p.mraoTexture = MRAOTEXTURE;
+        p.useEnvAmbient = USEENVAMBIENT;
+        p.specularTexture = SPECULARTEXTURE;
+        p.useParallax = PARALLAX;
+        p.parallaxDepth = PARALLAXDEPTH;
+        p.parallaxCenter = PARALLAXCENTER;
 	}
 
 	bool DrawToGBuffer( IMaterialVar **params )
@@ -212,7 +227,7 @@ BEGIN_VS_SHADER( DEFERRED_BRUSH, "" )
 		{
             PBR_Vars_t parms_composite;
 			SetupParmsComposite( parms_composite );
-			InitPassCompositePBR( parms_composite, this, params, pShaderShadow, pShaderAPI,
+			DrawPassCompositePBR( parms_composite, this, params, pShaderShadow, pShaderAPI,
 				vertexCompression, pDefContext );
 		}
 		else

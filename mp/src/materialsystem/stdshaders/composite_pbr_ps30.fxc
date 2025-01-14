@@ -34,7 +34,8 @@ const float4 g_ParallaxParms : register( c6 );
 #define PARALLAX_DEPTH g_ParallaxParms.r
 #define PARALLAX_CENTER g_ParallaxParms.g
 #endif
-const float3 cAmbientCube[6] : register(c7);
+const float2 g_vecFullScreenTexel : register(c7);
+const float3 cAmbientCube[6] : register(c8);
 
 // samplers
 // Base map, selfillum in alpha
@@ -74,6 +75,8 @@ struct PS_INPUT
 // Entry point
 float4 main(PS_INPUT i) : COLOR
 {
+	float2 screenPos = (i.screenPos + 0.5f) * g_vecFullScreenTexel;
+	
 #if USEENVAMBIENT
     float3 EnvAmbientCube[6];
     setupEnvMapAmbientCube(EnvAmbientCube, EnvmapSampler);
@@ -149,10 +152,10 @@ float4 main(PS_INPUT i) : COLOR
     // End ambient
 
     // Start direct
-	float4 lightAccum = tex2D(LightAccumSampler, i.screenPos);
+	float4 lightAccum = tex2D(LightAccumSampler, screenPos);
 	float3 directLighting = lightAccum.rgb;
-
-	directLighting += lightAccum.a * g_sunColor.rgb * sunAmount;
+	directLighting += lightAccum.a * sunAmount * g_sunColor.rgb;
+	directLighting *= albedo;
     // End direct
 
 	float fogFactor = 0.0f;
@@ -173,4 +176,5 @@ float4 main(PS_INPUT i) : COLOR
 #endif
 		
 	return FinalOutput(float4(combinedLighting, alpha), fogFactor, PIXELFOGTYPE, TONEMAP_SCALE_LINEAR, bWriteDepthToAlpha, i.projPos.z);
+
 }

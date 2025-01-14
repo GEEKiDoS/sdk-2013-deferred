@@ -15,7 +15,7 @@ const Sampler_t SAMPLER_EMISSIVE = SHADER_SAMPLER6;
 const Sampler_t SAMPLER_SPECULAR = SHADER_SAMPLER7;
 
 // Convars
-static ConVar mat_fullbright( "mat_fullbright", "0", FCVAR_CHEAT );
+extern ConVar mat_fullbright;
 static ConVar mat_specular( "mat_specular", "1", FCVAR_CHEAT );
 static ConVar mat_pbr_parallaxmap( "mat_pbr_parallaxmap", "1" );
 
@@ -213,7 +213,9 @@ void DrawPassCompositePBR( const PBR_Vars_t &info, CBaseVSShader *pShader, IMate
         {
             color = Vector{ 1.f, 1.f, 1.f };
         }
-        pShaderAPI->SetPixelShaderConstant( PSREG_SELFILLUMTINT, color.Base() );
+
+        // g_BaseColor
+        pShaderAPI->SetPixelShaderConstant( 4, color.Base() );
 
         // Setting up environment map
         if ( bHasEnvTexture )
@@ -305,7 +307,8 @@ void DrawPassCompositePBR( const PBR_Vars_t &info, CBaseVSShader *pShader, IMate
 
         // This has some spare space
         vEyePos_SpecExponent[3] = iEnvMapLOD;
-        pShaderAPI->SetPixelShaderConstant( PSREG_EYEPOS_SPEC_EXPONENT, vEyePos_SpecExponent, 1 );
+        // g_EyePos
+        pShaderAPI->SetPixelShaderConstant( 2, vEyePos_SpecExponent, 1 );
 
         // Setting lightmap texture
         pShaderAPI->BindStandardTexture( SAMPLER_LIGHTMAP, TEXTURE_LIGHTMAP_BUMPED );
@@ -336,10 +339,8 @@ void DrawPassCompositePBR( const PBR_Vars_t &info, CBaseVSShader *pShader, IMate
         pShader->SetModulationPixelShaderDynamicState_LinearColorSpace( 1 );
 
         // Send ambient cube to the pixel shader, force to black if not available
-        pShaderAPI->SetPixelShaderStateAmbientLightCube( PSREG_AMBIENT_CUBE, bModel );
-
-        // Send lighting array to the pixel shader
-        pShaderAPI->CommitPixelShaderLighting( PSREG_LIGHT_INFO_ARRAY );
+        // cAmbientCube
+        pShaderAPI->SetPixelShaderStateAmbientLightCube( 8, bModel );
 
         // Handle mat_fullbright 2 (diffuse lighting only)
         if ( bLightingOnly )
@@ -354,7 +355,8 @@ void DrawPassCompositePBR( const PBR_Vars_t &info, CBaseVSShader *pShader, IMate
         }
 
         // Sending fog info to the pixel shader
-        pShaderAPI->SetPixelShaderFogParams( PSREG_FOG_PARAMS );
+        // g_FogParams
+        pShaderAPI->SetPixelShaderFogParams( 3 );
 
         // Set up shader modulation color
         float modulationColor[4] = { 1.0, 1.0, 1.0, 1.0 };
@@ -363,14 +365,26 @@ void DrawPassCompositePBR( const PBR_Vars_t &info, CBaseVSShader *pShader, IMate
         modulationColor[0] *= flLScale;
         modulationColor[1] *= flLScale;
         modulationColor[2] *= flLScale;
-        pShaderAPI->SetPixelShaderConstant( PSREG_DIFFUSE_MODULATION, modulationColor );
+        // g_DiffuseModulation
+        pShaderAPI->SetPixelShaderConstant( 1, modulationColor );
 
         float flParams[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
         // Parallax Depth (the strength of the effect)
         flParams[0] = GetFloatParam( info.parallaxDepth, params, 3.0f );
         // Parallax Center (the height at which it's not moved)
         flParams[1] = GetFloatParam( info.parallaxCenter, params, 3.0f );
-        pShaderAPI->SetPixelShaderConstant( 27, flParams, 1 );
+        // g_ParallaxParms
+        pShaderAPI->SetPixelShaderConstant( 6, flParams, 1 );
+
+        ShaderViewport_t viewport;
+        pShaderAPI->GetViewports( &viewport, 1 );
+        float fl1[4] = { 1.0f / viewport.m_nWidth, 1.0f / viewport.m_nHeight, 0, 0 };
+
+        // g_vecFullScreenTexel
+        pShaderAPI->SetPixelShaderConstant( 7, fl1 );
+
+        // g_sunColor
+        pShaderAPI->SetPixelShaderConstant( 5, GetDeferredExt()->GetLightData_Global().diff.Base() );
     }
 
     // Actually draw the shader

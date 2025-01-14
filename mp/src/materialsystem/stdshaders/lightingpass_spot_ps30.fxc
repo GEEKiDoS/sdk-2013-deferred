@@ -316,6 +316,7 @@ PS_OUTPUT main( const PS_INPUT In )
 
 	PS_OUTPUT Out;
 
+	flLight.a = 0;
 	Out.vColor_0 = WriteLighting( flLight );
 
 	return Out;
